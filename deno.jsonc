@@ -1,0 +1,15 @@
+{
+  "importMap": "test_import_map.json",
+  "tasks": {
+    "fmt": "deno fmt",
+    "fmt-check": "deno fmt --check",
+    "lint": "deno lint",
+    "test": "deno test --doc --coverage=./cov",
+    "cov": "deno task test && deno coverage --lcov --output=cov.lcov cov/",
+    "cov-check": "deno task cov && lcov --summary cov.lcov --fail-under-lines 100",
+    "report": "deno task cov && genhtml -o html_cov cov.lcov && open html_cov/index.html",
+    "pre-commit": "deno task fmt-check && deno task lint && deno task test"
+  },
+  "fmt": { "files": { "exclude": ["cov"] } },
+  "lint": { "files": { "exclude": ["cov"] } }
+}

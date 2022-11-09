@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+deno task pre-commit
