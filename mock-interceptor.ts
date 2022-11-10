@@ -1,5 +1,5 @@
+import { MockRequest } from "./mock-fetch.type.ts";
 import { MockScope } from "./mock-scope.ts";
-import { MockRequest } from "./mock-utils.ts";
 
 /**
  * Defines an interceptor for a Mock

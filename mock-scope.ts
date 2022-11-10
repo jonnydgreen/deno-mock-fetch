@@ -1,5 +1,5 @@
 import { InvalidArgumentError } from "./errors.ts";
-import { MockRequest } from "./mock-utils.ts";
+import { MockRequest } from "./mock-fetch.type.ts";
 
 /**
  * Defines the scope API for an interceptor reply

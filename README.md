@@ -10,17 +10,19 @@ global `fetch` API and control the behaviour accordingly.
   - Request Origin
   - Request Path
   - Request Query string
-  - Request Body
-  - Request Headers
 - Intercept request indefinitely
 - Intercept request a finite number of times
 - Simulate a request time delay
 - Full docs coverage in markdown
 - All global `fetch` API inputs are supported
+- Support for calling a real API under certain hostname-based conditions.
 
 ## Upcoming features
 
-- Add `net.connect` support for custom hostnames
+- Add advanced methods of matching
+- Intercept multiple types of requests at once, based on:
+  - Request Body
+  - Request Headers
 - Add throw error support
 - Set default headers
 - Set default trailers
@@ -28,6 +30,7 @@ global `fetch` API and control the behaviour accordingly.
 - Auto-generated trailers
 - Full docs coverage in defined code
 - Full test coverage
+- Tidy up codebase
 
 ## Examples
 

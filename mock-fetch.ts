@@ -1,6 +1,6 @@
-import { Fetch } from "./mock-fetch.type.ts";
+import { Fetch, MockRequest, MockRequestKey } from "./mock-fetch.type.ts";
 import { MockInterceptor } from "./mock-interceptor.ts";
-import { getMockRequest, MockRequest, MockRequestKey } from "./mock-utils.ts";
+import { getMockRequest } from "./mock-utils.ts";
 import { buildKey } from "./mock-utils.ts";
 
 export class MockFetch {

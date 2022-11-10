@@ -11,6 +11,7 @@
 // const { STATUS_CODES } = require('http')
 
 import { MockNotMatchedError } from "./errors.ts";
+import { MockRequest, MockRequestKey, RequestKey } from "./mock-fetch.type.ts";
 
 export function matchValue(
   match: string | RegExp | ((value: unknown) => boolean),
@@ -124,12 +125,14 @@ function safeURL(path: string) {
 //   }
 // }
 
-export interface RequestKey {
-  url: URL;
-  method?: string;
-  body?: unknown;
-  headers?: Headers;
-  query?: URLSearchParams;
+export function getResourceMethod(
+  input: string | Request | URL,
+  init: RequestInit | undefined,
+): string {
+  if (input instanceof Request) {
+    return input.method;
+  }
+  return init?.method || "GET";
 }
 
 export function getResourceURL(input: string | Request | URL): URL {
@@ -144,38 +147,23 @@ export function getResourceURL(input: string | Request | URL): URL {
   return new URL(input.url);
 }
 
-export interface MockRequestKey {
-  url: URL;
-}
-
 export function buildKey(
   input: URL | Request | string,
-  _init?: RequestInit,
+  init?: RequestInit,
 ): MockRequestKey {
   const url = getResourceURL(input);
   return {
     url,
-    // method,
+    method: getResourceMethod(input, init),
     // body,
     // headers,
-    // query,
+    query: url.searchParams,
   };
-}
-
-export interface MockRequest {
-  request: Request;
-  response: Response;
-  consumed: boolean;
-  pending: boolean;
-  persist: boolean;
-  times: number;
-  delay: number;
-  calls: number;
 }
 
 export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
   // Match URL
-  const matchedMockRequests = mockRequests
+  let matchedMockRequests = mockRequests
     .filter(({ consumed }) => !consumed)
     .filter(({ request }) => matchValue(safeURL(request.url), key.url.href));
   if (matchedMockRequests.length === 0) {
@@ -184,29 +172,33 @@ export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
     );
   }
 
-  // // Match method
-  // matchedMockRequests = matchedMockRequests.filter(({ method }) =>
-  //   matchValue(method, key.method)
-  // );
-  // if (matchedMockRequests.length === 0) {
-  //   throw new MockNotMatchedError(`Mock dispatch not matched for method '${key.method}'`);
-  // }
+  // Match method
+  matchedMockRequests = matchedMockRequests.filter(({ request }) =>
+    matchValue(request.method, key.method)
+  );
+  if (matchedMockRequests.length === 0) {
+    throw new MockNotMatchedError(
+      `Mock Request not matched for method '${key.method}'`,
+    );
+  }
 
+  // TODO
   // // Match body
   // matchedMockRequests = matchedMockRequests.filter(({ body }) =>
   //   typeof body !== "undefined" ? matchValue(body, key.body) : true
   // );
   // if (matchedMockRequests.length === 0) {
-  //   throw new MockNotMatchedError(`Mock dispatch not matched for body '${key.body}'`);
+  //   throw new MockNotMatchedError(`Mock Request not matched for body '${key.body}'`);
   // }
 
+  // TODO
   // // Match headers
   // matchedMockRequests = matchedMockRequests.filter((mockDispatch) =>
   //   matchHeaders(mockDispatch, key.headers)
   // );
   // if (matchedMockRequests.length === 0) {
   //   throw new MockNotMatchedError(
-  //     `Mock dispatch not matched for headers '${
+  //     `Mock Request not matched for headers '${
   //       typeof key.headers === "object" ? JSON.stringify(key.headers) : key.headers
   //     }'`,
   //   );
@@ -214,26 +206,6 @@ export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
 
   return matchedMockRequests[0];
 }
-
-// function addMockDispatch (mockRequests, key, data) {
-//   const baseData = { timesInvoked: 0, times: 1, persist: false, consumed: false }
-//   const replyData = typeof data === 'function' ? { callback: data } : { ...data }
-//   const newMockDispatch = { ...baseData, ...key, pending: true, data: { error: null, ...replyData } }
-//   mockRequests.push(newMockDispatch)
-//   return newMockDispatch
-// }
-
-// function deleteMockDispatch (mockRequests, key) {
-//   const index = mockRequests.findIndex(dispatch => {
-//     if (!dispatch.consumed) {
-//       return false
-//     }
-//     return matchKey(dispatch, key)
-//   })
-//   if (index !== -1) {
-//     mockRequests.splice(index, 1)
-//   }
-// }
 
 // function generateKeyValues (data) {
 //   return Object.entries(data).reduce((keyValuePairs, [key, value]) => [...keyValuePairs, key, value], [])
@@ -245,12 +217,4 @@ export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
 //  */
 // function getStatusText (statusCode) {
 //   return STATUS_CODES[statusCode] || 'unknown'
-// }
-
-// async function getResponse (body) {
-//   const buffers = []
-//   for await (const data of body) {
-//     buffers.push(data)
-//   }
-//   return Buffer.concat(buffers).toString('utf8')
 // }
