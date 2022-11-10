@@ -46,6 +46,91 @@ blocks.describe("mock-fetch", () => {
     );
   });
 
+  blocks.it("should support an input URL", async () => {
+    // Arrange
+    const mockFetch = new MockFetch();
+    const mockScope = mockFetch
+      .intercept(new URL("https://example.com/hello"), { method: "GET" })
+      .reply("hello", { status: 200 });
+
+    // Act
+    const response = await fetch(new URL("https://example.com/hello"), {
+      method: "GET",
+    });
+    const text = await response.text();
+
+    // Assert
+    asserts.assertEquals(response.status, 200);
+    asserts.assertEquals(text, "hello");
+    asserts.assertEquals(
+      mockScope.metadata.calls,
+      1,
+      "Mock should be called once",
+    );
+    asserts.assertEquals(
+      mockScope.metadata.consumed,
+      true,
+      "Mock should be consumed",
+    );
+
+    // Act
+    const result = await asserts.assertRejects(() =>
+      fetch(new URL("https://example.com/hello"), {
+        method: "GET",
+      })
+    );
+
+    // Assert
+    asserts.assertIsError(
+      result,
+      MockNotMatchedError,
+      "Mock Request not matched for URL 'https://example.com/hello'",
+    );
+  });
+
+  blocks.it("should support an input Request", async () => {
+    // Arrange
+    const mockFetch = new MockFetch();
+    const request = new Request("https://example.com/hello", { method: "GET" });
+    const mockScope = mockFetch
+      .intercept(request)
+      .reply("hello", { status: 200 });
+
+    // Act
+    const response = await fetch("https://example.com/hello", {
+      method: "GET",
+    });
+    const text = await response.text();
+
+    // Assert
+    asserts.assertEquals(response.status, 200);
+    asserts.assertEquals(text, "hello");
+    asserts.assertEquals(
+      mockScope.metadata.calls,
+      1,
+      "Mock should be called once",
+    );
+    asserts.assertEquals(
+      mockScope.metadata.consumed,
+      true,
+      "Mock should be consumed",
+    );
+
+    // Act
+    const result = await asserts.assertRejects(() =>
+      fetch("https://example.com/hello", {
+        method: "GET",
+      })
+    );
+
+    // Assert
+    asserts.assertIsError(
+      result,
+      MockNotMatchedError,
+      "Mock Request not matched for URL 'https://example.com/hello'",
+    );
+  });
+
   blocks.it("should support persisting requests", async () => {
     // Arrange
     const mockFetch = new MockFetch();

@@ -15,17 +15,17 @@ global `fetch` API and control the behaviour accordingly.
 - Intercept request indefinitely
 - Intercept request a finite number of times
 - Simulate a request time delay
+- Full docs coverage in markdown
+- All global `fetch` API inputs are supported
 
 ## Upcoming features
 
 - Add `net.connect` support for custom hostnames
 - Add throw error support
-- Ensure all global `fetch` API inputs are supported
 - Set default headers
 - Set default trailers
 - Auto-generated headers
 - Auto-generated trailers
-- Full docs coverage in markdown
 - Full docs coverage in defined code
 - Full test coverage
 
