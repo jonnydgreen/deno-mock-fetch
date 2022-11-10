@@ -27,3 +27,8 @@ export interface MockRequest {
   delay: number;
   calls: number;
 }
+
+export type MockMatcher =
+  | string
+  | ((input: unknown) => boolean)
+  | RegExp;

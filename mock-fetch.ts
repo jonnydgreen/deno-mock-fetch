@@ -1,16 +1,21 @@
-import { Fetch, MockRequest, MockRequestKey } from "./mock-fetch.type.ts";
+import { MockNotMatchedError } from "./errors.ts";
+import { Fetch, MockMatcher, MockRequest } from "./mock-fetch.type.ts";
 import { MockInterceptor } from "./mock-interceptor.ts";
-import { getMockRequest } from "./mock-utils.ts";
+import { getMockRequest, matchValue } from "./mock-utils.ts";
 import { buildKey } from "./mock-utils.ts";
+
+const originalFetch = globalThis.fetch.bind(globalThis);
 
 export class MockFetch {
   readonly #originalFetch: Fetch;
   #mockRequests: MockRequest[] = [];
   #calls = 0;
   #isMockActive = true;
+  #netConnect: boolean | MockMatcher[];
 
   constructor() {
-    this.#originalFetch = globalThis.fetch.bind(globalThis);
+    this.#originalFetch = originalFetch;
+    this.#netConnect = false;
 
     globalThis.fetch = this.#fetch.bind(this);
   }
@@ -75,23 +80,65 @@ export class MockFetch {
     return this.#isMockActive;
   }
 
-  #fetch(input: URL | Request | string, init?: RequestInit): Promise<Response> {
+  /**
+   * Activate Net Connect support.
+   *
+   * @param {MockMatcher} matcher The Net Connect Hostname Matcher.
+   */
+  activateNetConnect(
+    matcher?: MockMatcher,
+  ) {
+    if (matcher) {
+      if (Array.isArray(this.#netConnect)) {
+        this.#netConnect.push(matcher);
+      } else {
+        this.#netConnect = [matcher];
+      }
+    } else {
+      this.#netConnect = true;
+    }
+  }
+
+  /**
+   * Deactivate Net Connect support.
+   */
+  deactivateNetConnect() {
+    this.#netConnect = false;
+  }
+
+  async #fetch(
+    input: URL | Request | string,
+    init?: RequestInit,
+  ): Promise<Response> {
     if (!this.#isMockActive) {
       return this.#originalFetch(input, init);
     }
 
+    // Get Mock Request
     const requestKey = buildKey(input, init);
-
-    // TODO: net connect
-    if (
-      [
-        "TODO",
-      ].includes(requestKey.url.hostname)
-    ) {
-      return this.#originalFetch(input, init);
+    try {
+      const mockRequest = getMockRequest(this.#mockRequests, requestKey);
+      return await this.#mockFetch(mockRequest);
+    } catch (error: unknown) {
+      // Handle Net Connect
+      if (error instanceof MockNotMatchedError) {
+        const origin = requestKey.url.origin;
+        if (this.#netConnect === false) {
+          throw new MockNotMatchedError(
+            `${error.message}: subsequent request to origin ${origin} was not allowed (net.connect deactivated)`,
+          );
+        }
+        if (this.#checkNetConnect(this.#netConnect, requestKey.url)) {
+          return this.#originalFetch(input, init);
+        } else {
+          throw new MockNotMatchedError(
+            `${error.message}: subsequent request to origin ${origin} was not allowed (net.connect is not activated for this origin)`,
+          );
+        }
+      } else {
+        throw error;
+      }
     }
-
-    return this.#mockFetch(requestKey);
   }
 
   #updateMockRequest(mockRequest: MockRequest): MockRequest {
@@ -106,7 +153,7 @@ export class MockFetch {
   /**
    * Mock dispatch function used to simulate fetch calls.
    */
-  async #mockFetch(requestKey: MockRequestKey) {
+  async #mockFetch(mockRequest: MockRequest) {
     // TODO: error
     // // If specified, trigger dispatch error
     // if (error !== null) {
@@ -114,8 +161,6 @@ export class MockFetch {
     //   handler.onError(error);
     //   return true;
     // }
-
-    const mockRequest = getMockRequest(this.#mockRequests, requestKey);
 
     // Delay
     if (typeof mockRequest.delay === "number" && mockRequest.delay > 0) {
@@ -125,5 +170,17 @@ export class MockFetch {
     // Update mock request metadata and return response
     const updatedMockRequest = this.#updateMockRequest(mockRequest);
     return Promise.resolve(updatedMockRequest.response);
+  }
+
+  #checkNetConnect(netConnect: boolean | MockMatcher[], url: URL): boolean {
+    if (netConnect === true) {
+      return true;
+    } else if (
+      Array.isArray(netConnect) &&
+      netConnect.some((matcher) => matchValue(matcher, url.host))
+    ) {
+      return true;
+    }
+    return false;
   }
 }

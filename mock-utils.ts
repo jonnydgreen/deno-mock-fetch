@@ -11,10 +11,15 @@
 // const { STATUS_CODES } = require('http')
 
 import { MockNotMatchedError } from "./errors.ts";
-import { MockRequest, MockRequestKey, RequestKey } from "./mock-fetch.type.ts";
+import {
+  MockMatcher,
+  MockRequest,
+  MockRequestKey,
+  RequestKey,
+} from "./mock-fetch.type.ts";
 
 export function matchValue(
-  match: string | RegExp | ((value: unknown) => boolean),
+  match: MockMatcher,
   value: string,
 ) {
   if (typeof match === "string") {

@@ -4,9 +4,18 @@ import { MockFetch } from "./mod.ts";
 import { MockNotMatchedError } from "./errors.ts";
 
 blocks.describe("mock-fetch", () => {
+  let mockFetch: MockFetch;
+
+  blocks.beforeEach(() => {
+    mockFetch = new MockFetch();
+  });
+
+  blocks.afterEach(() => {
+    mockFetch.close();
+  });
+
   blocks.it("should intercept a basic request", async () => {
     // Arrange
-    const mockFetch = new MockFetch();
     const mockScope = mockFetch
       .intercept("https://example.com/hello", { method: "GET" })
       .reply("hello", { status: 200 });
@@ -48,7 +57,6 @@ blocks.describe("mock-fetch", () => {
 
   blocks.it("should support an input URL", async () => {
     // Arrange
-    const mockFetch = new MockFetch();
     const mockScope = mockFetch
       .intercept(new URL("https://example.com/hello"), { method: "GET" })
       .reply("hello", { status: 200 });
@@ -90,7 +98,6 @@ blocks.describe("mock-fetch", () => {
 
   blocks.it("should support an input Request", async () => {
     // Arrange
-    const mockFetch = new MockFetch();
     const request = new Request("https://example.com/hello", { method: "GET" });
     const mockScope = mockFetch
       .intercept(request)
@@ -133,7 +140,6 @@ blocks.describe("mock-fetch", () => {
 
   blocks.it("should support matching by method", async () => {
     // Arrange
-    const mockFetch = new MockFetch();
     const mockScope = mockFetch
       .intercept(new URL("https://example.com/hello"), { method: "POST" })
       .reply("hello", { status: 200 });
@@ -189,7 +195,6 @@ blocks.describe("mock-fetch", () => {
 
   blocks.it("should support matching by query string", async () => {
     // Arrange
-    const mockFetch = new MockFetch();
     const mockScope = mockFetch
       .intercept(new URL("https://example.com/hello?foo=bar"), {
         method: "GET",
@@ -247,7 +252,6 @@ blocks.describe("mock-fetch", () => {
 
   blocks.it("should support persisting requests", async () => {
     // Arrange
-    const mockFetch = new MockFetch();
     const mockScope = mockFetch
       .intercept("https://example.com/hello", { method: "GET" })
       .reply("hello", { status: 200 }).persist();
@@ -297,7 +301,6 @@ blocks.describe("mock-fetch", () => {
     "should support restricting requests to a specific number of calls",
     async () => {
       // Arrange
-      const mockFetch = new MockFetch();
       const mockScope = mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
         .reply("hello", { status: 200 }).times(2);
@@ -367,4 +370,41 @@ blocks.describe("mock-fetch", () => {
       );
     },
   );
+
+  blocks.describe("when net connect is activated", () => {
+    blocks.it(
+      "should support calling a real endpoint for matching hostnames",
+      async () => {
+        // Arrange
+        mockFetch.activateNetConnect();
+        const mockScope = mockFetch
+          .intercept(new URL("https://example.com/hello"), { method: "GET" })
+          .reply("hello", { status: 200 });
+
+        // Act
+        const resultNoMatch = await asserts.assertRejects(() =>
+          fetch(new URL("https://example.com/foo"), {
+            method: "GET",
+          })
+        );
+
+        // Assert
+        asserts.assertIsError(
+          resultNoMatch,
+          Deno.errors.PermissionDenied,
+          'Requires net access to "example.com", run again with the --allow-net flag',
+        );
+        asserts.assertEquals(
+          mockScope.metadata.calls,
+          0,
+          "Mock should not be called",
+        );
+        asserts.assertEquals(
+          mockScope.metadata.consumed,
+          false,
+          "Mock should not be consumed",
+        );
+      },
+    );
+  });
 });
