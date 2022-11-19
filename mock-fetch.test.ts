@@ -1,7 +1,7 @@
 import * as blocks from "https://deno.land/std@0.163.0/testing/bdd.ts";
 import * as asserts from "https://deno.land/std@0.163.0/testing/asserts.ts";
 import { MockFetch } from "./mod.ts";
-import { MockNotMatchedError } from "./errors.ts";
+import { MockNotMatchedError } from "./mock-fetch.error.ts";
 
 blocks.describe("mock-fetch", () => {
   let mockFetch: MockFetch;

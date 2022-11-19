@@ -1,4 +1,4 @@
-import { InvalidArgumentError } from "./errors.ts";
+import { InvalidArgumentError } from "./mock-fetch.error.ts";
 import { MockRequest } from "./mock-fetch.type.ts";
 
 /**

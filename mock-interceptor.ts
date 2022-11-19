@@ -1,4 +1,4 @@
-import { MockRequest } from "./mock-fetch.type.ts";
+import { MockRequest, MockRequestInit } from "./mock-fetch.type.ts";
 import { MockScope } from "./mock-scope.ts";
 
 /**
@@ -11,7 +11,7 @@ export class MockInterceptor {
   constructor(
     mockRequests: MockRequest[],
     input: URL | Request | string,
-    init?: RequestInit,
+    init?: MockRequestInit,
   ) {
     this.#mockRequest = new Request(input, init);
     this.#mockRequests = mockRequests;
@@ -44,12 +44,6 @@ export class MockInterceptor {
   //  * Mock a request with a defined error.
   //  */
   // replyWithError (error) {
-  //   if (typeof error === 'undefined') {
-  //     throw new InvalidArgumentError('error must be defined')
-  //   }
-
-  //   const newMockDispatch = addMockDispatch(this.#Dispatches, this.#DispatchKey, { error })
-  //   return new MockScope(newMockDispatch)
   // }
 
   // TODO
@@ -57,12 +51,6 @@ export class MockInterceptor {
   //  * Set default reply headers on the interceptor for subsequent replies
   //  */
   // defaultReplyHeaders (headers) {
-  //   if (typeof headers === 'undefined') {
-  //     throw new InvalidArgumentError('headers must be defined')
-  //   }
-
-  //   this.#DefaultHeaders = headers
-  //   return this
   // }
 
   // TODO
@@ -70,12 +58,6 @@ export class MockInterceptor {
   //  * Set default reply trailers on the interceptor for subsequent replies
   //  */
   // defaultReplyTrailers (trailers) {
-  //   if (typeof trailers === 'undefined') {
-  //     throw new InvalidArgumentError('trailers must be defined')
-  //   }
-
-  //   this.#DefaultTrailers = trailers
-  //   return this
   // }
 
   // TODO
@@ -83,7 +65,5 @@ export class MockInterceptor {
   //  * Set reply content length header for replies on the interceptor
   //  */
   // replyContentLength () {
-  //   this.#ContentLength = true
-  //   return this
   // }
 }

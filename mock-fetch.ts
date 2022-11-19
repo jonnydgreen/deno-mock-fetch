@@ -1,5 +1,10 @@
-import { MockNotMatchedError } from "./errors.ts";
-import { Fetch, MockMatcher, MockRequest } from "./mock-fetch.type.ts";
+import { MockNotMatchedError } from "./mock-fetch.error.ts";
+import {
+  Fetch,
+  MockMatcher,
+  MockRequest,
+  MockRequestInit,
+} from "./mock-fetch.type.ts";
 import { MockInterceptor } from "./mock-interceptor.ts";
 import { getMockRequest, matchValue } from "./mock-utils.ts";
 import { buildKey } from "./mock-utils.ts";
@@ -36,7 +41,7 @@ export class MockFetch {
    */
   public intercept(
     input: URL | Request | string,
-    init?: RequestInit,
+    init?: MockRequestInit,
   ): MockInterceptor {
     const interceptor = new MockInterceptor(this.#mockRequests, input, init);
     return interceptor;
@@ -108,7 +113,7 @@ export class MockFetch {
 
   async #fetch(
     input: URL | Request | string,
-    init?: RequestInit,
+    init?: MockRequestInit,
   ): Promise<Response> {
     if (!this.#isMockActive) {
       return this.#originalFetch(input, init);
