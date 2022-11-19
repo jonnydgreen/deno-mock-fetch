@@ -1,4 +1,4 @@
-# deno-mock-fetch
+# deno_mock_fetch
 
 Deno mock fetch implementation to be used in testing. This module allows one to
 intercept calls to the global `fetch` API and control the behaviour accordingly.
