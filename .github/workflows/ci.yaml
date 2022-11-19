@@ -1,0 +1,45 @@
+name: CI
+
+on: push
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os.name }}
+    strategy:
+      matrix:
+        deno-version: [v1.x]
+        os:
+          - name: ubuntu-latest
+            platform: linux
+            cpu: amd64
+            target: x86_64-unknown-linux-gnu
+          - name: macOS-latest
+            platform: darwin
+            cpu: amd64
+            target: x86_64-apple-darwin
+          - name: windows-latest
+            platform: windows
+            cpu: amd64
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Deno ${{ matrix.deno-version }}
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ matrix.deno-version }}
+
+      - name: Check formatting
+        run: deno task fmt-check
+
+      - name: Analyze code
+        run: deno task lint
+
+      - name: Run tests and generate coverage
+        run: deno task cov
+
+      - name: Process coverage report
+        # Only want to process this once
+        if: ${{ matrix.os.name == 'ubuntu-latest' }}
+        uses: codecov/codecov-action@v3
