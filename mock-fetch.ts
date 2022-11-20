@@ -127,17 +127,17 @@ export class MockFetch {
     } catch (error: unknown) {
       // Handle Net Connect
       if (error instanceof MockNotMatchedError) {
-        const origin = requestKey.url.origin;
+        const hostname = requestKey.url.hostname;
         if (this.#netConnect === false) {
           throw new MockNotMatchedError(
-            `${error.message}: subsequent request to origin ${origin} was not allowed (net.connect deactivated)`,
+            `${error.message}: subsequent request to hostname ${hostname} was not allowed (net.connect deactivated)`,
           );
         }
         if (this.#checkNetConnect(this.#netConnect, requestKey.url)) {
           return this.#originalFetch(input, init);
         } else {
           throw new MockNotMatchedError(
-            `${error.message}: subsequent request to origin ${origin} was not allowed (net.connect is not activated for this origin)`,
+            `${error.message}: subsequent request to hostname ${hostname} was not allowed (net.connect is not activated for this hostname)`,
           );
         }
       } else {
@@ -182,7 +182,7 @@ export class MockFetch {
       return true;
     } else if (
       Array.isArray(netConnect) &&
-      netConnect.some((matcher) => matchValue(matcher, url.host))
+      netConnect.some((matcher) => matchValue(matcher, url.hostname))
     ) {
       return true;
     }
