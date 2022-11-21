@@ -1,5 +1,7 @@
 # deno_mock_fetch
 
+[![codecov](https://codecov.io/gh/jonnydgreen/deno-mock-fetch/branch/main/graph/badge.svg)](https://codecov.io/gh/jonnydgreen/deno-mock-fetch)
+
 Deno mock fetch implementation to be used in testing. This module allows one to
 intercept calls to the global `fetch` API and control the behaviour accordingly.
 
