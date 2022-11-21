@@ -1,20 +1,28 @@
-import { MockRequest, MockRequestInit } from "./mock-fetch.type.ts";
+import {
+  MockMatcher,
+  MockRequest,
+  MockRequestInit,
+} from "./mock-fetch.type.ts";
 import { MockScope } from "./mock-scope.ts";
+import { isMockMatcher, safeURL } from "./mock-utils.ts";
 
 /**
  * Defines an interceptor for a Mock
  */
 export class MockInterceptor {
-  #mockRequest: Request;
-  #mockRequests: MockRequest[];
+  readonly #mockRequests: MockRequest[];
+  readonly #input: URL | Request | MockMatcher;
+  readonly #init?: MockRequestInit;
+  readonly #defaultRequest = new Request("https://example.com");
 
   constructor(
     mockRequests: MockRequest[],
-    input: URL | Request | string,
+    input: URL | Request | MockMatcher,
     init?: MockRequestInit,
   ) {
-    this.#mockRequest = new Request(input, init);
     this.#mockRequests = mockRequests;
+    this.#input = input;
+    this.#init = init;
 
     // TODO: support URI fragments
   }
@@ -24,7 +32,12 @@ export class MockInterceptor {
    */
   reply(body?: BodyInit | null, init?: ResponseInit) {
     const mockRequest: MockRequest = {
-      request: this.#mockRequest,
+      request: {
+        input: this.#input,
+        init: this.#init,
+        method: this.#methodMatcher(),
+        url: this.#urlMatcher(),
+      },
       get response() {
         return new Response(body, init);
       },
@@ -66,4 +79,27 @@ export class MockInterceptor {
   //  */
   // replyContentLength () {
   // }
+
+  /**
+   * Get interceptor method matcher
+   */
+  #methodMatcher(): MockMatcher {
+    const method = this.#init?.method;
+    return isMockMatcher(method) ? method : this.#defaultRequest.method;
+  }
+
+  /**
+   * Get interceptor URL matcher
+   */
+  #urlMatcher(): MockMatcher {
+    let url: MockMatcher;
+    if (isMockMatcher(this.#input)) {
+      url = this.#input;
+    } else if (this.#input instanceof URL) {
+      url = this.#input.href;
+    } else {
+      url = this.#input.url;
+    }
+    return typeof url === "string" ? safeURL(url) : url;
+  }
 }

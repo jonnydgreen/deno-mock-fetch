@@ -2,7 +2,6 @@ import { MockNotMatchedError } from "./mock-fetch.error.ts";
 import {
   MockMatcher,
   MockRequest,
-  MockRequestInit,
   MockRequestKey,
   RequestKey,
 } from "./mock-fetch.type.ts";
@@ -24,7 +23,7 @@ export function matchValue(
   return false;
 }
 
-function safeURL(path: string) {
+export function safeURL(path: string) {
   if (typeof path !== "string") {
     return path;
   }
@@ -42,7 +41,7 @@ function safeURL(path: string) {
 
 export function getResourceMethod(
   input: string | Request | URL,
-  init: MockRequestInit | undefined,
+  init: RequestInit | undefined,
 ): string {
   if (input instanceof Request) {
     return input.method;
@@ -64,7 +63,7 @@ export function getResourceURL(input: string | Request | URL): URL {
 
 export function buildKey(
   input: URL | Request | string,
-  init?: MockRequestInit,
+  init?: RequestInit,
 ): MockRequestKey {
   const url = getResourceURL(input);
   return {
@@ -76,11 +75,16 @@ export function buildKey(
   };
 }
 
+export function isMockMatcher(input: unknown): input is MockMatcher {
+  return typeof input === "string" || typeof input === "function" ||
+    input instanceof RegExp;
+}
+
 export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
   // Match URL
   let matchedMockRequests = mockRequests
     .filter(({ consumed }) => !consumed)
-    .filter(({ request }) => matchValue(safeURL(request.url), key.url.href));
+    .filter(({ request }) => matchValue(request.url, key.url.href));
   if (matchedMockRequests.length === 0) {
     throw new MockNotMatchedError(
       `Mock Request not matched for URL '${key.url}'`,

@@ -40,7 +40,7 @@ export class MockFetch {
    *   .reply("hello", { status: 200 });
    */
   public intercept(
-    input: URL | Request | string,
+    input: URL | Request | MockMatcher,
     init?: MockRequestInit,
   ): MockInterceptor {
     const interceptor = new MockInterceptor(this.#mockRequests, input, init);
@@ -113,7 +113,7 @@ export class MockFetch {
 
   async #fetch(
     input: URL | Request | string,
-    init?: MockRequestInit,
+    init?: RequestInit,
   ): Promise<Response> {
     if (!this.#isMockActive) {
       return this.#originalFetch(input, init);

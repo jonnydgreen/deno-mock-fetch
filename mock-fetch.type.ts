@@ -3,7 +3,9 @@ export type Fetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export type MockRequestInit = RequestInit;
+export interface MockRequestInit extends Omit<RequestInit, "method"> {
+  method: MockMatcher;
+}
 
 export interface RequestKey {
   url: URL;
@@ -19,8 +21,15 @@ export interface MockRequestKey {
   query?: URLSearchParams;
 }
 
+export interface MockRequestInputs {
+  input: URL | Request | MockMatcher;
+  init?: MockRequestInit;
+  url: MockMatcher;
+  method: MockMatcher;
+}
+
 export interface MockRequest {
-  request: Request;
+  request: MockRequestInputs;
   response: Response;
   consumed: boolean;
   pending: boolean;
@@ -30,7 +39,7 @@ export interface MockRequest {
   calls: number;
 }
 
-export type MockMatcher = string;
-// TODO: add advanced matchers
-// | ((input: unknown) => boolean)
-// | RegExp;
+export type MockMatcher =
+  | string
+  | ((input: unknown) => boolean)
+  | RegExp;
