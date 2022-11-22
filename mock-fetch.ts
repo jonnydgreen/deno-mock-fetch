@@ -40,7 +40,7 @@ export class MockFetch {
    *   .reply("hello", { status: 200 });
    */
   public intercept(
-    input: URL | Request | string,
+    input: URL | Request | MockMatcher,
     init?: MockRequestInit,
   ): MockInterceptor {
     const interceptor = new MockInterceptor(this.#mockRequests, input, init);
@@ -113,7 +113,7 @@ export class MockFetch {
 
   async #fetch(
     input: URL | Request | string,
-    init?: MockRequestInit,
+    init?: RequestInit,
   ): Promise<Response> {
     if (!this.#isMockActive) {
       return this.#originalFetch(input, init);
@@ -130,16 +130,17 @@ export class MockFetch {
         const hostname = requestKey.url.hostname;
         if (this.#netConnect === false) {
           throw new MockNotMatchedError(
-            `${error.message}: subsequent request to hostname ${hostname} was not allowed (net.connect deactivated)`,
+            `${error.message}: subsequent request to hostname ${hostname} was not allowed (Net Connect deactivated)`,
           );
         }
         if (this.#checkNetConnect(this.#netConnect, requestKey.url)) {
           return this.#originalFetch(input, init);
         } else {
           throw new MockNotMatchedError(
-            `${error.message}: subsequent request to hostname ${hostname} was not allowed (net.connect is not activated for this hostname)`,
+            `${error.message}: subsequent request to hostname ${hostname} was not allowed (Net Connect is not activated for this hostname)`,
           );
         }
+        // TODO: ensure coverage when error support is added
       } else {
         throw error;
       }
@@ -160,15 +161,12 @@ export class MockFetch {
    */
   async #mockFetch(mockRequest: MockRequest) {
     // TODO: error
-    // // If specified, trigger dispatch error
+    // // If specified, trigger error
     // if (error !== null) {
-    //   deleteMockRequest(this[kDispatches], key);
-    //   handler.onError(error);
-    //   return true;
     // }
 
     // Delay
-    if (typeof mockRequest.delay === "number" && mockRequest.delay > 0) {
+    if (mockRequest.delay > 0) {
       await new Promise((resolve) => setTimeout(resolve, mockRequest.delay));
     }
 
