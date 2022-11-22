@@ -17,6 +17,10 @@ intercept calls to the global `fetch` API and control the behaviour accordingly.
 - Simulate a request time delay
 - Support for falling back to calling a real API for defined hostnames
 - All global `fetch` API inputs are supported
+- Advanced methods for matching requests:
+  - `string`
+  - `RegExp`
+  - `Function`
 
 ## Table of Contents
 
@@ -81,6 +85,10 @@ I want to:
 - [Close and clean up the Mock Fetch instance](#close-and-clean-up-the-mock-fetch-instance)
 - [Get the number of times requests have been intercepted](#get-the-number-of-times-requests-have-been-intercepted)
 - [View registered mock metadata](#view-registered-mock-metadata)
+- [Intercept a request based on method RegExp](#intercept-a-request-based-on-method-regexp)
+- [Intercept a request based on method Function](#intercept-a-request-based-on-method-function)
+- [Intercept a request based on URL RegExp](#intercept-a-request-based-on-url-regexp)
+- [Intercept a request based on URL Function](#intercept-a-request-based-on-url-function)
 - [Intercept requests alongside superdeno](#intercept-requests-alongside-superdeno)
 
 ### Intercept a request containing a Query String
@@ -409,6 +417,108 @@ const mockScope = mockFetch
 console.log(mockScope.metadata); // MockRequest
 ```
 
+### Intercept a request based on method RegExp
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", { method: /GET/ })
+  .reply("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello");
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on method Function
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    method: (input) => input === "GET",
+  })
+  .reply("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello");
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on URL RegExp
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept(new RegExp("https\\:\\/\\/example\\.com\\/hello\\?foo\\=bar"))
+  .reply("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello?foo=bar");
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on URL Function
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept((input) => input === "https://example.com/hello?foo=bar")
+  .reply("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello?foo=bar");
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
 ### Intercept requests alongside superdeno
 
 To work alongside superdeno, one must setup calls to `127.0.0.1` before
@@ -441,11 +551,6 @@ superdeno(app)
 
 ## Upcoming features
 
-- Add advanced methods (such as `RegExp`, custom function etc) of matching
-  requests:
-  - Origin
-  - Path
-  - Query string
 - Intercept multiple types of requests at once, based on:
   - Request Body
   - Request Headers
