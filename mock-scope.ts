@@ -16,7 +16,9 @@ export class MockScope {
    */
   delay(waitInMs: number) {
     if (!Number.isInteger(waitInMs) || waitInMs <= 0) {
-      throw new InvalidArgumentError("waitInMs must be a valid integer > 0");
+      throw new InvalidArgumentError(
+        "Invalid delay: waitInMs must be a valid integer > 0",
+      );
     }
 
     this.#mockRequest.delay = waitInMs;
@@ -36,7 +38,9 @@ export class MockScope {
    */
   times(repeatTimes: number) {
     if (!Number.isInteger(repeatTimes) || repeatTimes <= 0) {
-      throw new InvalidArgumentError("repeatTimes must be a valid integer > 0");
+      throw new InvalidArgumentError(
+        "Invalid times input: repeatTimes must be a valid integer > 0",
+      );
     }
 
     this.#mockRequest.times = repeatTimes;

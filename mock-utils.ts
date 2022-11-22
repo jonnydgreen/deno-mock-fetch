@@ -13,21 +13,13 @@ export function matchValue(
   if (typeof match === "string") {
     return match === value;
   }
-  // TODO: add advanced matchers
-  // if (match instanceof RegExp) {
-  //   return match.test(value);
-  // }
-  // if (typeof match === "function") {
-  //   return match(value) === true;
-  // }
-  return false;
+  if (match instanceof RegExp) {
+    return match.test(value);
+  }
+  return match(value) === true;
 }
 
 export function safeURL(path: string) {
-  if (typeof path !== "string") {
-    return path;
-  }
-
   const pathSegments = path.split("?");
 
   if (pathSegments.length !== 2) {
@@ -123,5 +115,6 @@ export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
   //   );
   // }
 
+  // Only take the first matched request
   return matchedMockRequests[0];
 }

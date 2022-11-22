@@ -41,5 +41,5 @@ export interface MockRequest {
 
 export type MockMatcher =
   | string
-  | ((input: unknown) => boolean)
+  | ((input: string) => boolean)
   | RegExp;
