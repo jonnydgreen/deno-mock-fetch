@@ -31,6 +31,7 @@ export interface MockRequestInputs {
 export interface MockRequest {
   request: MockRequestInputs;
   response: Response;
+  error?: Error;
   consumed: boolean;
   pending: boolean;
   persist: boolean;

@@ -11,6 +11,11 @@ import { buildKey } from "./mock-utils.ts";
 
 const originalFetch = globalThis.fetch.bind(globalThis);
 
+/**
+ * Deno Mock Fetch class.
+ *
+ * Instantiate this to set up global `fetch` API interception.
+ */
 export class MockFetch {
   readonly #originalFetch: Fetch;
   #mockRequests: MockRequest[] = [];
@@ -27,20 +32,26 @@ export class MockFetch {
 
   /**
    * Intercept a global `fetch` API call for the defined inputs.
-   * @param input The request input of the `fetch` API call.
-   * @param init The request init input of the `fetch` API call.
-   * @returns {MockInterceptor} A Mock Interceptor that allows further customisation of the Request mocking.
    *
-   * @example
+   * ```typescript
+   * import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+   *
    * const mockFetch = new MockFetch();
    * mockFetch
    *   // Intercept `GET https://example.com/hello`
    *   .intercept("https://example.com/hello", { method: "GET" })
    *   // Reply with status `200` and text `hello`
    *   .reply("hello", { status: 200 });
+   * ```
    */
   public intercept(
+    /**
+     * The request input of the `fetch` API call.
+     */
     input: URL | Request | MockMatcher,
+    /**
+     * The request init input of the `fetch` API call.
+     */
     init?: MockRequestInit,
   ): MockInterceptor {
     const interceptor = new MockInterceptor(this.#mockRequests, input, init);
@@ -87,10 +98,11 @@ export class MockFetch {
 
   /**
    * Activate Net Connect support.
-   *
-   * @param {MockMatcher} matcher The Net Connect Hostname Matcher.
    */
   activateNetConnect(
+    /**
+     * The Net Connect Hostname Matcher.
+     */
     matcher?: MockMatcher,
   ) {
     if (matcher) {
@@ -140,7 +152,6 @@ export class MockFetch {
             `${error.message}: subsequent request to hostname ${hostname} was not allowed (Net Connect is not activated for this hostname)`,
           );
         }
-        // TODO: ensure coverage when error support is added
       } else {
         throw error;
       }
@@ -159,19 +170,21 @@ export class MockFetch {
   /**
    * Mock dispatch function used to simulate fetch calls.
    */
-  async #mockFetch(mockRequest: MockRequest) {
-    // TODO: error
-    // // If specified, trigger error
-    // if (error !== null) {
-    // }
-
-    // Delay
+  async #mockFetch(mockRequest: MockRequest): Promise<Response> {
+    // If specified, simulate a delay
     if (mockRequest.delay > 0) {
       await new Promise((resolve) => setTimeout(resolve, mockRequest.delay));
     }
 
-    // Update mock request metadata and return response
+    // Update mock request metadata
     const updatedMockRequest = this.#updateMockRequest(mockRequest);
+
+    // If specified, throw the defined error
+    if (mockRequest.error) {
+      throw mockRequest.error;
+    }
+
+    // Otherwise, return response
     return Promise.resolve(updatedMockRequest.response);
   }
 

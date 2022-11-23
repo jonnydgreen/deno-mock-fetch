@@ -285,6 +285,32 @@ blocks.describe("deno-mock-fetch", () => {
       );
     });
 
+    blocks.it("should support throwing an error", async () => {
+      // Arrange
+      const mockScope = mockFetch
+        .intercept("https://example.com/hello")
+        .replyWithError(new TypeError("Network error"));
+
+      // Act
+      const error = await asserts.assertRejects(() =>
+        fetch("https://example.com/hello")
+      );
+
+      // Assert
+      asserts.assertEquals(mockFetch.isMockActive, true);
+      asserts.assertIsError(error, TypeError, "Network error");
+      asserts.assertEquals(
+        mockScope.metadata.calls,
+        1,
+        "Mock should be called once",
+      );
+      asserts.assertEquals(
+        mockScope.metadata.consumed,
+        true,
+        "Mock should be consumed",
+      );
+    });
+
     blocks.describe("when matching by method", () => {
       [
         {

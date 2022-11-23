@@ -2,8 +2,9 @@
 
 [![codecov](https://codecov.io/gh/jonnydgreen/deno-mock-fetch/branch/main/graph/badge.svg)](https://codecov.io/gh/jonnydgreen/deno-mock-fetch)
 
-Deno mock fetch implementation to be used in testing. This module allows one to
-intercept calls to the global `fetch` API and control the behaviour accordingly.
+[Deno mock fetch](https://deno.land/x/deno_mock_fetch) implementation to be used
+in testing. This module allows one to intercept calls to the global `fetch` API
+and control the behaviour accordingly.
 
 ## Features
 
@@ -21,10 +22,12 @@ intercept calls to the global `fetch` API and control the behaviour accordingly.
   - `string`
   - `RegExp`
   - `Function`
+- Throw custom error support
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [API Documentation](#api-documentation)
 - [Examples](#examples)
 - [Upcoming features](#upcoming-features)
 - [Contributing](#contributing)
@@ -89,6 +92,7 @@ I want to:
 - [Intercept a request based on method Function](#intercept-a-request-based-on-method-function)
 - [Intercept a request based on URL RegExp](#intercept-a-request-based-on-url-regexp)
 - [Intercept a request based on URL Function](#intercept-a-request-based-on-url-function)
+- [Throw a custom error upon fetch call](#throw-a-custom-error-upon-fetch-call)
 - [Intercept requests alongside superdeno](#intercept-requests-alongside-superdeno)
 
 ### Intercept a request containing a Query String
@@ -519,6 +523,28 @@ console.log(response.status); // 200
 console.log(text); // "hello"
 ```
 
+### Throw a custom error upon fetch call
+
+Set up the interceptor and defined an error using the following
+[documentation](https://developer.mozilla.org/en-US/docs/Web/API/fetch#exceptions)
+as a guide.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept((input) => input === "https://example.com/hello")
+  .replyWithError(new TypeError("Network error"));
+```
+
+Call the matching URL:
+
+```typescript
+await fetch("https://example.com/hello"); // Throws the defined error: new TypeError("Network error")
+```
+
 ### Intercept requests alongside superdeno
 
 To work alongside superdeno, one must setup calls to `127.0.0.1` before
@@ -549,12 +575,18 @@ superdeno(app)
   });
 ```
 
+## API Documentation
+
+To browse API documentation:
+
+- Go to https://deno.land/x/deno_mock_fetch.
+- Click "View Documentation".
+
 ## Upcoming features
 
 - Intercept multiple types of requests at once, based on:
   - Request Body
   - Request Headers
-- Add throw error support
 - Set default headers
 - Set default trailers
 - Auto-generated headers

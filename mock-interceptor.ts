@@ -7,7 +7,8 @@ import { MockScope } from "./mock-scope.ts";
 import { isMockMatcher, safeURL } from "./mock-utils.ts";
 
 /**
- * Defines an interceptor for a Mock
+ * Defines an interceptor for a Mock.
+ * Instantiated when `MockFetch.intercept(...)` is called.
  */
 export class MockInterceptor {
   readonly #mockRequests: MockRequest[];
@@ -30,7 +31,16 @@ export class MockInterceptor {
   /**
    * Mock a request with a defined reply.
    */
-  reply(body?: BodyInit | null, init?: ResponseInit) {
+  reply(
+    /**
+     * Reply body
+     */
+    body?: BodyInit | null,
+    /**
+     * Reply response init definition.
+     */
+    init?: ResponseInit,
+  ): MockScope {
     const mockRequest: MockRequest = {
       request: {
         input: this.#input,
@@ -52,12 +62,33 @@ export class MockInterceptor {
     return new MockScope(mockRequest);
   }
 
-  // TODO
-  // /**
-  //  * Mock a request with a defined error.
-  //  */
-  // replyWithError (error) {
-  // }
+  /**
+   * Mock a request with a defined error that will be thrown
+   * when global `fetch` is called.
+   */
+  replyWithError(
+    /** Error to be thrown. */
+    error: Error,
+  ): MockScope {
+    const mockRequest: MockRequest = {
+      request: {
+        input: this.#input,
+        init: this.#init,
+        method: this.#methodMatcher(),
+        url: this.#urlMatcher(),
+      },
+      response: new Response(),
+      error,
+      calls: 0,
+      times: 0,
+      delay: 0,
+      consumed: false,
+      pending: true,
+      persist: false,
+    };
+    this.#mockRequests.push(mockRequest);
+    return new MockScope(mockRequest);
+  }
 
   // TODO
   // /**
