@@ -163,7 +163,7 @@ blocks.describe("deno-mock-fetch", () => {
       );
     });
 
-    blocks.it("should support a Request interceptor", async () => {
+    blocks.it("should support a Request-based interceptor", async () => {
       // Arrange
       const request = new Request("https://example.com/hello", {
         method: "GET",
@@ -458,6 +458,84 @@ blocks.describe("deno-mock-fetch", () => {
             result,
             MockNotMatchedError,
             "Mock Request not matched for URL 'https://example.com/hello?foo=bar'",
+          );
+        });
+      });
+    });
+
+    blocks.describe("when matching by body", () => {
+      [
+        {
+          name: "should support matching by body string type",
+          input: "hello",
+        },
+        // TODO: regex
+        // TODO: fn
+        // TODO: body types
+        // | Blob
+        // | BufferSource
+        // | FormData
+        // | URLSearchParams
+        // | ReadableStream<Uint8Array>
+        // | string;
+      ].forEach((test) => {
+        blocks.it(test.name, async () => {
+          // Arrange
+          const mockScope = mockFetch
+            .intercept(new URL("https://example.com/hello"), {
+              method: "POST",
+              body: test.input,
+            })
+            .reply("hello", { status: 200 });
+
+          // Act
+          const resultNoMatch = await asserts.assertRejects(() =>
+            fetch(new URL("https://example.com/hello"), {
+              method: "POST",
+              body: "no-match",
+            })
+          );
+
+          // Assert
+          asserts.assertIsError(
+            resultNoMatch,
+            MockNotMatchedError,
+            "Mock Request not matched for body 'no-match'",
+          );
+
+          // Act
+          const response = await fetch(new URL("https://example.com/hello"), {
+            method: "POST",
+            body: test.input,
+          });
+          const text = await response.text();
+
+          // Assert
+          asserts.assertEquals(response.status, 200);
+          asserts.assertEquals(text, "hello");
+          asserts.assertEquals(
+            mockScope.metadata.calls,
+            1,
+            "Mock should be called once",
+          );
+          asserts.assertEquals(
+            mockScope.metadata.consumed,
+            true,
+            "Mock should be consumed",
+          );
+
+          // Act
+          const result = await asserts.assertRejects(() =>
+            fetch(new URL("https://example.com/hello"), {
+              method: "POST",
+            })
+          );
+
+          // Assert
+          asserts.assertIsError(
+            result,
+            MockNotMatchedError,
+            "Mock Request not matched for URL 'https://example.com/hello'",
           );
         });
       });

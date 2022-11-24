@@ -10,15 +10,16 @@ export interface MockRequestInit extends Omit<RequestInit, "method"> {
 export interface RequestKey {
   url: URL;
   method: string;
-  body?: unknown;
-  headers?: Headers;
   query?: URLSearchParams;
+  body?: string;
+  headers?: Headers;
 }
 
 export interface MockRequestKey {
   url: URL;
   method: string;
   query?: URLSearchParams;
+  body?: string;
 }
 
 export interface MockRequestInputs {
@@ -26,6 +27,7 @@ export interface MockRequestInputs {
   init?: MockRequestInit;
   url: MockMatcher;
   method: MockMatcher;
+  body?: MockMatcher;
 }
 
 export interface MockRequest {

@@ -47,6 +47,7 @@ export class MockInterceptor {
         init: this.#init,
         method: this.#methodMatcher(),
         url: this.#urlMatcher(),
+        body: this.#bodyMatcher(),
       },
       get response() {
         return new Response(body, init);
@@ -76,6 +77,7 @@ export class MockInterceptor {
         init: this.#init,
         method: this.#methodMatcher(),
         url: this.#urlMatcher(),
+        body: this.#bodyMatcher(),
       },
       response: new Response(),
       error,
@@ -132,5 +134,19 @@ export class MockInterceptor {
       url = this.#input.url;
     }
     return typeof url === "string" ? safeURL(url) : url;
+  }
+
+  /**
+   * Get interceptor body matcher
+   *
+   * Note, if input is of type Request, this will be handled in MockFetch initialisation.
+   */
+  #bodyMatcher(): MockMatcher | undefined {
+    let body: MockMatcher | undefined;
+    const initBody = this.#init?.body;
+    if (isMockMatcher(initBody)) {
+      body = initBody;
+    }
+    return body;
   }
 }

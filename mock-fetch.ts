@@ -131,8 +131,11 @@ export class MockFetch {
       return this.#originalFetch(input, init);
     }
 
+    // Run any required initialisations
+    await this.#init();
+
     // Get Mock Request
-    const requestKey = buildKey(input, init);
+    const requestKey = await buildKey(input, init);
     try {
       const mockRequest = getMockRequest(this.#mockRequests, requestKey);
       return await this.#mockFetch(mockRequest);
@@ -198,5 +201,17 @@ export class MockFetch {
       return true;
     }
     return false;
+  }
+
+  async #init(): Promise<void> {
+    await Promise.all(this.#mockRequests.map(async (mockRequest) => {
+      if (
+        !mockRequest.request.body &&
+        mockRequest.request.input instanceof Request &&
+        !mockRequest.request.input.bodyUsed
+      ) {
+        mockRequest.request.body = await mockRequest.request.input.text();
+      }
+    }));
   }
 }

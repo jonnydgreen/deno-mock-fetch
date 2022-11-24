@@ -53,15 +53,29 @@ export function getResourceURL(input: string | Request | URL): URL {
   return new URL(input.url);
 }
 
-export function buildKey(
+export async function getResourceBody(
   input: URL | Request | string,
   init?: RequestInit,
-): MockRequestKey {
+): Promise<string | undefined> {
+  if (input instanceof Request) {
+    return await input.text();
+  }
+
+  if (init?.body) {
+    return init.body.toString();
+  }
+}
+
+export async function buildKey(
+  input: URL | Request | string,
+  init?: RequestInit,
+): Promise<MockRequestKey> {
   const url = getResourceURL(input);
   return {
     url,
     method: getResourceMethod(input, init),
-    // body,
+    body: await getResourceBody(input, init),
+    // TODO: headers
     // headers,
     query: url.searchParams,
   };
@@ -72,7 +86,10 @@ export function isMockMatcher(input: unknown): input is MockMatcher {
     input instanceof RegExp;
 }
 
-export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
+export function getMockRequest(
+  mockRequests: MockRequest[],
+  key: RequestKey,
+): MockRequest {
   // Match URL
   let matchedMockRequests = mockRequests
     .filter(({ consumed }) => !consumed)
@@ -93,14 +110,17 @@ export function getMockRequest(mockRequests: MockRequest[], key: RequestKey) {
     );
   }
 
-  // TODO
-  // // Match body
-  // matchedMockRequests = matchedMockRequests.filter(({ body }) =>
-  //   typeof body !== "undefined" ? matchValue(body, key.body) : true
-  // );
-  // if (matchedMockRequests.length === 0) {
-  //   throw new MockNotMatchedError(`Mock Request not matched for body '${key.body}'`);
-  // }
+  // Match body
+  matchedMockRequests = matchedMockRequests.filter(({ request }) =>
+    typeof request.body !== "undefined"
+      ? matchValue(request.body, key.body ?? "")
+      : true
+  );
+  if (matchedMockRequests.length === 0) {
+    throw new MockNotMatchedError(
+      `Mock Request not matched for body '${key.body}'`,
+    );
+  }
 
   // TODO
   // // Match headers
