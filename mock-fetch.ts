@@ -171,7 +171,7 @@ export class MockFetch {
   }
 
   /**
-   * Mock dispatch function used to simulate fetch calls.
+   * Mock fetch function used to simulate fetch calls.
    */
   async #mockFetch(mockRequest: MockRequest): Promise<Response> {
     // If specified, simulate a delay

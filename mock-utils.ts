@@ -1,22 +1,17 @@
 import { MockNotMatchedError } from "./mock-fetch.error.ts";
-import {
-  MockMatcher,
-  MockRequest,
-  MockRequestKey,
-  RequestKey,
-} from "./mock-fetch.type.ts";
+import { MockMatcher, MockRequest, RequestKey } from "./mock-fetch.type.ts";
 
 export function matchValue(
-  match: MockMatcher,
+  matcher: MockMatcher,
   value: string,
 ) {
-  if (typeof match === "string") {
-    return match === value;
+  if (typeof matcher === "string") {
+    return matcher === value;
   }
-  if (match instanceof RegExp) {
-    return match.test(value);
+  if (matcher instanceof RegExp) {
+    return matcher.test(value);
   }
-  return match(value) === true;
+  return matcher(value) === true;
 }
 
 /**
@@ -63,6 +58,21 @@ export function getResourceURL(input: string | Request | URL): URL {
   return new URL(input.url);
 }
 
+export function getResourceHeaders(
+  input: URL | Request | string,
+  init?: RequestInit,
+): Headers {
+  if (input instanceof Request) {
+    return input.headers;
+  }
+
+  if (init?.headers) {
+    return new Headers(init.headers);
+  }
+
+  return new Headers();
+}
+
 export async function getResourceBody(
   input: URL | Request | string,
   init?: RequestInit,
@@ -82,14 +92,13 @@ export async function getResourceBody(
 export async function buildKey(
   input: URL | Request | string,
   init?: RequestInit,
-): Promise<MockRequestKey> {
+): Promise<RequestKey> {
   const url = getResourceURL(input);
   return {
     url,
     method: getResourceMethod(input, init),
     body: await getResourceBody(input, init),
-    // TODO: headers
-    // headers,
+    headers: getResourceHeaders(input, init),
     query: url.searchParams,
   };
 }
@@ -97,6 +106,35 @@ export async function buildKey(
 export function isMockMatcher(input: unknown): input is MockMatcher {
   return typeof input === "string" || typeof input === "function" ||
     input instanceof RegExp;
+}
+
+export function matchHeaders(
+  mockRequest: MockRequest,
+  headers: Headers,
+) {
+  let mockHeaderMatchers: [string, MockMatcher][] = [];
+  if (mockRequest.request.input instanceof Request) {
+    mockHeaderMatchers = [...mockRequest.request.input.headers.entries()];
+  } else {
+    const initHeaders = mockRequest.request.init?.headers;
+    if (initHeaders instanceof Headers) {
+      mockHeaderMatchers = [...initHeaders.entries()];
+    } else if (Array.isArray(initHeaders)) {
+      mockHeaderMatchers = [...initHeaders] as [string, MockMatcher][];
+    } else if (typeof initHeaders === "function") {
+      return initHeaders(headers);
+    } else if (initHeaders) {
+      mockHeaderMatchers = [...Object.entries(initHeaders)];
+    }
+  }
+
+  for (const [headerName, headerMatcher] of mockHeaderMatchers) {
+    const header = headers.get(headerName);
+    if (header === null || !matchValue(headerMatcher, header)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function getMockRequest(
@@ -135,18 +173,17 @@ export function getMockRequest(
     );
   }
 
-  // TODO
-  // // Match headers
-  // matchedMockRequests = matchedMockRequests.filter((mockDispatch) =>
-  //   matchHeaders(mockDispatch, key.headers)
-  // );
-  // if (matchedMockRequests.length === 0) {
-  //   throw new MockNotMatchedError(
-  //     `Mock Request not matched for headers '${
-  //       typeof key.headers === "object" ? JSON.stringify(key.headers) : key.headers
-  //     }'`,
-  //   );
-  // }
+  // Match headers
+  matchedMockRequests = matchedMockRequests.filter((mockRequest) =>
+    matchHeaders(mockRequest, key.headers)
+  );
+  if (matchedMockRequests.length === 0) {
+    throw new MockNotMatchedError(
+      `Mock Request not matched for headers '${
+        JSON.stringify([...key.headers.entries()])
+      }'`,
+    );
+  }
 
   // Only take the first matched request
   return matchedMockRequests[0];

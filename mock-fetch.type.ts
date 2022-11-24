@@ -3,22 +3,22 @@ export type Fetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export interface MockRequestInit extends Omit<RequestInit, "method" | "body"> {
-  method: MockMatcher;
+export interface MockRequestInit
+  extends Omit<RequestInit, "method" | "body" | "headers"> {
+  method?: MockMatcher;
   body?: BodyInit | null | MockMatcher;
+  headers?: MockHeadersInit;
 }
+
+export type MockHeadersInit = Headers | Record<string, MockMatcher> | [
+  string,
+  MockMatcher,
+][] | ((headers: Headers) => boolean);
 
 export interface RequestKey {
   url: URL;
   method: string;
-  query?: URLSearchParams;
-  body?: string;
-  headers?: Headers;
-}
-
-export interface MockRequestKey {
-  url: URL;
-  method: string;
+  headers: Headers;
   query?: URLSearchParams;
   body?: string;
 }

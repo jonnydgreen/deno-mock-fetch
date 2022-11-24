@@ -14,6 +14,7 @@ and control the behaviour accordingly.
   - Request Path
   - Request Query string
   - Request Body
+  - Request Headers
 - Intercept request indefinitely
 - Intercept request a finite number of times
 - Simulate a request time delay
@@ -33,7 +34,6 @@ and control the behaviour accordingly.
 - [Quick Start](#quick-start)
 - [API Documentation](#api-documentation)
 - [Examples](#examples)
-- [Upcoming features](#upcoming-features)
 - [Contributing](#contributing)
 - [Limitations](#limitations)
 - [License](#license)
@@ -98,6 +98,10 @@ I want to:
 - [Intercept a request based on URL RegExp](#intercept-a-request-based-on-url-regexp)
 - [Intercept a request based on URL Function](#intercept-a-request-based-on-url-function)
 - [Intercept a request based on body](#intercept-a-request-based-on-body)
+- [Intercept a request based on headers object](#intercept-a-request-based-on-headers-object)
+- [Intercept a request based on headers instance](#intercept-a-request-based-on-headers-instance)
+- [Intercept a request based on headers array](#intercept-a-request-based-on-headers-array)
+- [Intercept a request based on headers function](#intercept-a-request-based-on-headers-function)
 - [Throw a custom error upon fetch call](#throw-a-custom-error-upon-fetch-call)
 - [Set default headers](#set-default-headers)
 - [Autogenerate `content-length` header](#autogenerate-content-length-header)
@@ -572,6 +576,146 @@ Note, the following body types are also supported:
 - `FormData`
 - `URLSearchParams`
 
+### Intercept a request based on headers object
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: {
+      hello: "there",
+      foo: /bar/,
+      hey: (input: string) => input === "ho",
+    },
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+    foo: "bar",
+    hey: "ho",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on headers instance
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: new Headers({
+      hello: "there",
+      another: "one",
+    }),
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+    another: "one",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on headers array
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: [
+      ["hello", "there"],
+      ["foo", /bar/],
+      ["hey", (input: string) => input === "ho"],
+    ],
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+    foo: "bar",
+    hey: "ho",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on headers function
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: (headers) => headers.get("hello") === "there",
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
 ### Throw a custom error upon fetch call
 
 Set up the interceptor and defined an error using the following
@@ -680,11 +824,6 @@ To browse API documentation:
 
 - Go to https://deno.land/x/deno_mock_fetch.
 - Click "View Documentation".
-
-## Upcoming features
-
-- Intercept multiple types of requests at once, based on:
-  - Request Headers
 
 ## Contributing
 

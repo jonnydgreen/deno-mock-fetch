@@ -4,9 +4,9 @@
 
 # Checklist
 
-<!-- TODO: add link to contributing guidelines -->
-
-- [ ] My changes follow the contributing guidelines of this project.
+- [ ] My changes follow the
+      [contributing guidelines](https://github.com/jonnydgreen/deno-mock-fetch/blob/main/CONTRIBUTING.md)
+      of this project.
 - [ ] I have performed a self-review of my code.
 - [ ] I have made corresponding changes to the documentation.
 - [ ] I have added tests that prove my fix is effective or that my changes work.

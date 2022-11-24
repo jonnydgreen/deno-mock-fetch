@@ -6,6 +6,7 @@ import {
   InvalidArgumentError,
   MockNotMatchedError,
 } from "./mock-fetch.error.ts";
+import { MockHeadersInit } from "./mock-fetch.type.ts";
 
 blocks.describe("deno-mock-fetch", () => {
   let mockFetch: MockFetch;
@@ -582,6 +583,7 @@ blocks.describe("deno-mock-fetch", () => {
             const result = await asserts.assertRejects(() =>
               fetch(new URL("https://example.com/hello"), {
                 method: "POST",
+                body: test.body,
               })
             );
 
@@ -593,6 +595,110 @@ blocks.describe("deno-mock-fetch", () => {
             );
           });
         }
+      });
+    });
+
+    blocks.describe("when matching by headers", () => {
+      [
+        {
+          name: "should support matching by headers object",
+          input: {
+            hello: "there",
+            foo: /bar/,
+            hey: (input: string) => input === "ho",
+          },
+          headers: new Headers({
+            hello: "there",
+            foo: "bar",
+            hey: "ho",
+          }),
+        },
+        {
+          name: "should support matching by headers instance",
+          input: new Headers({
+            hello: "there",
+            another: "one",
+          }),
+          headers: new Headers({
+            hello: "there",
+            another: "one",
+          }),
+        },
+        {
+          name: "should support matching by headers array",
+          input: [
+            ["hello", "there"],
+            ["foo", /bar/],
+            ["hey", (input: string) => input === "ho"],
+          ] as MockHeadersInit,
+          headers: new Headers({
+            hello: "there",
+            foo: "bar",
+            hey: "ho",
+          }),
+        },
+        {
+          name: "should support matching by headers function",
+          input: (headers: Headers) => headers.get("hello") === "there",
+          headers: new Headers({
+            hello: "there",
+          }),
+        },
+      ].forEach((test) => {
+        blocks.it(test.name, async () => {
+          // Arrange
+          const mockScope = mockFetch
+            .intercept("https://example.com/hello", { headers: test.input })
+            .response("hello", { status: 200 });
+
+          // Act
+          const resultNoMatch = await asserts.assertRejects(() =>
+            fetch("https://example.com/hello", {
+              headers: new Headers({ no: "match" }),
+            })
+          );
+
+          // Assert
+          asserts.assertIsError(
+            resultNoMatch,
+            MockNotMatchedError,
+            'Mock Request not matched for headers \'[["no","match"]]\'',
+          );
+
+          // Act
+          const response = await fetch(new URL("https://example.com/hello"), {
+            headers: test.headers,
+          });
+          const text = await response.text();
+
+          // Assert
+          asserts.assertEquals(response.status, 200);
+          asserts.assertEquals(text, "hello");
+          asserts.assertEquals(
+            mockScope.metadata.calls,
+            1,
+            "Mock should be called once",
+          );
+          asserts.assertEquals(
+            mockScope.metadata.consumed,
+            true,
+            "Mock should be consumed",
+          );
+
+          // Act
+          const result = await asserts.assertRejects(() =>
+            fetch(new URL("https://example.com/hello"), {
+              headers: test.headers,
+            })
+          );
+
+          // Assert
+          asserts.assertIsError(
+            result,
+            MockNotMatchedError,
+            "Mock Request not matched for URL 'https://example.com/hello'",
+          );
+        });
       });
     });
 
