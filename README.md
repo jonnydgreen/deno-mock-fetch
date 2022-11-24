@@ -25,6 +25,8 @@ and control the behaviour accordingly.
   - `Function`
 - Throw custom error support
 - Set default headers
+- Auto-generated headers:
+  - `content-length`
 
 ## Table of Contents
 
@@ -98,6 +100,7 @@ I want to:
 - [Intercept a request based on body](#intercept-a-request-based-on-body)
 - [Throw a custom error upon fetch call](#throw-a-custom-error-upon-fetch-call)
 - [Set default headers](#set-default-headers)
+- [Autogenerate `content-length` header](#autogenerate-content-length-header)
 - [Intercept requests alongside superdeno](#intercept-requests-alongside-superdeno)
 
 ### Intercept a request containing a Query String
@@ -617,6 +620,30 @@ console.log(response.headers); // { "content-type", "text/plain;charset=UTF-8", 
 console.log(text); // "hello"
 ```
 
+### Autogenerate `content-length` header
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+const mockInterceptor = mockFetch
+  .intercept("https://example.com/hello")
+  .responseContentLength()
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello");
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(response.headers); // { "content-type", "text/plain;charset=UTF-8", "content-length": "5" }
+console.log(text); // "hello"
+```
+
 ### Intercept requests alongside superdeno
 
 To work alongside superdeno, one must setup calls to `127.0.0.1` before
@@ -658,7 +685,6 @@ To browse API documentation:
 
 - Intercept multiple types of requests at once, based on:
   - Request Headers
-- Auto-generated headers
 
 ## Contributing
 

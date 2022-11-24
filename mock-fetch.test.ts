@@ -868,6 +868,42 @@ blocks.describe("deno-mock-fetch", () => {
         );
       },
     );
+
+    blocks.it(
+      "should automatically calculate content-length headers when activated",
+      async () => {
+        // Arrange
+        const mockInterceptor = mockFetch
+          .intercept("https://example.com/hello");
+
+        mockInterceptor.response("hello1", { status: 200 });
+        mockInterceptor.response("hello2", { status: 200 });
+        mockInterceptor.response("hello-there", { status: 200 });
+
+        // Act
+        const response1 = await fetch("https://example.com/hello");
+        const text1 = await response1.text();
+
+        mockInterceptor.responseContentLength();
+
+        const response2 = await fetch("https://example.com/hello");
+        const text2 = await response2.text();
+
+        const response3 = await fetch("https://example.com/hello");
+        const text3 = await response3.text();
+
+        // Assert
+        asserts.assertEquals(response1.status, 200);
+        asserts.assertEquals(text1, "hello1");
+        asserts.assertEquals(response1.headers.get("content-length"), null);
+        asserts.assertEquals(response2.status, 200);
+        asserts.assertEquals(text2, "hello2");
+        asserts.assertEquals(response2.headers.get("content-length"), "6");
+        asserts.assertEquals(response3.status, 200);
+        asserts.assertEquals(text3, "hello-there");
+        asserts.assertEquals(response3.headers.get("content-length"), "11");
+      },
+    );
   });
 
   blocks.describe("activateNetConnect", () => {
