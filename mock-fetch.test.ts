@@ -786,6 +786,57 @@ blocks.describe("deno-mock-fetch", () => {
         }
       });
     });
+
+    blocks.it(
+      "should use default headers when default Response Headers are defined",
+      async () => {
+        // Arrange
+        const interceptor = mockFetch
+          .intercept("https://example.com/hello")
+          .defaultResponseHeaders({ hello: "there" });
+
+        interceptor.reply("hello1", { status: 200 });
+        interceptor.reply("hello2", { status: 200, headers: { foo: "bar" } });
+        interceptor.reply("hello3", { status: 200, headers: { hi: "ho" } });
+
+        // Act
+        const response1 = await fetch("https://example.com/hello");
+        const text1 = await response1.text();
+        const response2 = await fetch("https://example.com/hello");
+        const text2 = await response2.text();
+
+        interceptor.defaultResponseHeaders({ hey: "hey" });
+
+        const response3 = await fetch("https://example.com/hello");
+        const text3 = await response3.text();
+
+        // Assert
+        asserts.assertEquals(response1.status, 200);
+        asserts.assertEquals(text1, "hello1");
+        asserts.assertEquals(
+          [...response1.headers.entries()],
+          [["content-type", "text/plain;charset=UTF-8"], ["hello", "there"]],
+        );
+        asserts.assertEquals(response2.status, 200);
+        asserts.assertEquals(text2, "hello2");
+        asserts.assertEquals(
+          [...response2.headers.entries()],
+          [["content-type", "text/plain;charset=UTF-8"], ["foo", "bar"], [
+            "hello",
+            "there",
+          ]],
+        );
+        asserts.assertEquals(response3.status, 200);
+        asserts.assertEquals(text3, "hello3");
+        asserts.assertEquals(
+          [...response3.headers.entries()],
+          [["content-type", "text/plain;charset=UTF-8"], ["hey", "hey"], [
+            "hi",
+            "ho",
+          ]],
+        );
+      },
+    );
   });
 
   blocks.describe("activateNetConnect", () => {

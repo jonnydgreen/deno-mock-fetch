@@ -16,6 +16,7 @@ export class MockInterceptor {
   readonly #input: URL | Request | MockMatcher;
   readonly #init?: MockRequestInit;
   readonly #defaultRequest = new Request("https://example.com");
+  #defaultHeadersInit?: HeadersInit;
 
   constructor(
     mockRequests: MockRequest[],
@@ -49,6 +50,7 @@ export class MockInterceptor {
      */
     init?: ResponseInit,
   ): MockScope {
+    const getHeadersInit = this.#getDefaultHeadersInit.bind(this);
     const mockRequest: MockRequest = {
       request: {
         input: this.#input,
@@ -58,7 +60,12 @@ export class MockInterceptor {
         body: this.#bodyMatcher(),
       },
       get response() {
-        return new Response(body, init);
+        const response = new Response(body, init);
+        const headers = new Headers(getHeadersInit());
+        for (const [key, value] of headers.entries()) {
+          response.headers.append(key, value);
+        }
+        return response;
       },
       calls: 0,
       times: 0,
@@ -100,18 +107,23 @@ export class MockInterceptor {
     return new MockScope(mockRequest);
   }
 
-  // TODO
-  // /**
-  //  * Set default reply headers on the interceptor for subsequent replies
-  //  */
-  // defaultReplyHeaders (headers) {
-  // }
+  /**
+   * Set default response headers on the interceptor for subsequent replies
+   */
+  defaultResponseHeaders(headersInit: HeadersInit): MockInterceptor {
+    this.#defaultHeadersInit = headersInit;
+    return this;
+  }
+
+  #getDefaultHeadersInit(): HeadersInit | undefined {
+    return this.#defaultHeadersInit;
+  }
 
   // TODO
   // /**
-  //  * Set default reply trailers on the interceptor for subsequent replies
+  //  * Set default response trailers on the interceptor for subsequent replies
   //  */
-  // defaultReplyTrailers (trailers) {
+  // defaultResponseTrailers (trailers) {
   // }
 
   // TODO

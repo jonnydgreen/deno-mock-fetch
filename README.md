@@ -13,6 +13,7 @@ and control the behaviour accordingly.
   - Request Origin
   - Request Path
   - Request Query string
+  - Request Body
 - Intercept request indefinitely
 - Intercept request a finite number of times
 - Simulate a request time delay
@@ -23,6 +24,7 @@ and control the behaviour accordingly.
   - `RegExp`
   - `Function`
 - Throw custom error support
+- Set default headers
 
 ## Table of Contents
 
@@ -31,6 +33,7 @@ and control the behaviour accordingly.
 - [Examples](#examples)
 - [Upcoming features](#upcoming-features)
 - [Contributing](#contributing)
+- [Limitations](#limitations)
 - [License](#license)
 - [Inspirations](#inspirations)
 
@@ -92,7 +95,9 @@ I want to:
 - [Intercept a request based on method Function](#intercept-a-request-based-on-method-function)
 - [Intercept a request based on URL RegExp](#intercept-a-request-based-on-url-regexp)
 - [Intercept a request based on URL Function](#intercept-a-request-based-on-url-function)
+- [Intercept a request based on body](#intercept-a-request-based-on-body)
 - [Throw a custom error upon fetch call](#throw-a-custom-error-upon-fetch-call)
+- [Set default headers](#set-default-headers)
 - [Intercept requests alongside superdeno](#intercept-requests-alongside-superdeno)
 
 ### Intercept a request containing a Query String
@@ -523,6 +528,47 @@ console.log(response.status); // 200
 console.log(text); // "hello"
 ```
 
+### Intercept a request based on body
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    method: "POST",
+    body: "hello",
+  })
+  .reply("there", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  method: "POST",
+  body: "hello",
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "there"
+```
+
+Note, the following body types are also supported:
+
+- `string`
+- `RegExp`
+- `(input: string) => boolean`
+- `Blob`
+- `ArrayBufferLike`
+- `FormData`
+- `URLSearchParams`
+
 ### Throw a custom error upon fetch call
 
 Set up the interceptor and defined an error using the following
@@ -543,6 +589,32 @@ Call the matching URL:
 
 ```typescript
 await fetch("https://example.com/hello"); // Throws the defined error: new TypeError("Network error")
+```
+
+### Set default headers
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+const mockInterceptor = mockFetch
+  .intercept("https://example.com/hello")
+  .defaultResponseHeaders({ foo: "bar" })
+  .reply("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello");
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(response.headers); // { "content-type", "text/plain;charset=UTF-8", foo: "bar" }
+console.log(text); // "hello"
 ```
 
 ### Intercept requests alongside superdeno
@@ -585,7 +657,6 @@ To browse API documentation:
 ## Upcoming features
 
 - Intercept multiple types of requests at once, based on:
-  - Request Body
   - Request Headers
 - Set default headers
 - Set default trailers
@@ -599,6 +670,25 @@ Contributions, issues and feature requests are very welcome. If you are using
 this package and fixed a bug for yourself, please consider submitting a PR!
 
 Further details can be found in the [Contributing guide](./CONTRIBUTING.md).
+
+## Limitations
+
+The following limitations are known:
+
+### Cannot intercept with a ReadableStream as the request body
+
+The following with throw an `InvalidArgumentError`:
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+mockFetch.intercept("https://example.com/hello", {
+  method: "POST",
+  body: new ReadableStream(),
+});
+// Throws an `InvalidArgumentError`
+```
 
 ## License
 
