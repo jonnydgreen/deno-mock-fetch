@@ -2,7 +2,7 @@ import { InvalidArgumentError } from "./mock-fetch.error.ts";
 import { MockRequest } from "./mock-fetch.type.ts";
 
 /**
- * Defines the scope API for an interceptor reply
+ * Defines the scope API for an interceptor response
  */
 export class MockScope {
   #mockRequest: MockRequest;
@@ -12,7 +12,7 @@ export class MockScope {
   }
 
   /**
-   * Delay a reply by a set amount in ms.
+   * Delay a response by a set amount in ms.
    */
   delay(waitInMs: number) {
     if (!Number.isInteger(waitInMs) || waitInMs <= 0) {
@@ -26,7 +26,7 @@ export class MockScope {
   }
 
   /**
-   * For a defined reply, never mark as consumed.
+   * For a defined response, never mark as consumed.
    */
   persist() {
     this.#mockRequest.persist = true;
@@ -34,7 +34,7 @@ export class MockScope {
   }
 
   /**
-   * Allow one to define a reply for a set amount of matching requests.
+   * Allow one to define a response for a set amount of matching requests.
    */
   times(repeatTimes: number) {
     if (!Number.isInteger(repeatTimes) || repeatTimes <= 0) {

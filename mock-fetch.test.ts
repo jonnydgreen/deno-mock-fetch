@@ -23,7 +23,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 }).persist();
+        .response("hello", { status: 200 }).persist();
 
       // Act and Assert
       asserts.assertEquals(mockFetch.calls, 0);
@@ -40,7 +40,7 @@ blocks.describe("deno-mock-fetch", () => {
       mockFetch.deactivate();
       mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 }).persist();
+        .response("hello", { status: 200 }).persist();
       mockFetch.activate();
 
       // Act
@@ -62,7 +62,7 @@ blocks.describe("deno-mock-fetch", () => {
       mockFetch.activate();
       mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 }).persist();
+        .response("hello", { status: 200 }).persist();
       mockFetch.deactivate();
 
       // Act
@@ -87,7 +87,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch("https://example.com/hello", {
@@ -129,7 +129,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept(new URL("https://example.com/hello"), { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch(new URL("https://example.com/hello"), {
@@ -173,7 +173,7 @@ blocks.describe("deno-mock-fetch", () => {
       });
       const mockScope = mockFetch
         .intercept(request)
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch("https://example.com/hello", {
@@ -214,7 +214,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch(new Request("https://example.com/hello"));
@@ -253,7 +253,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch("https://example.com/hello");
@@ -292,7 +292,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept("https://example.com/hello")
-        .replyWithError(new TypeError("Network error"));
+        .throwError(new TypeError("Network error"));
 
       // Act
       const error = await asserts.assertRejects(() =>
@@ -335,7 +335,7 @@ blocks.describe("deno-mock-fetch", () => {
             .intercept(new URL("https://example.com/hello"), {
               method: test.input,
             })
-            .reply("hello", { status: 200 });
+            .response("hello", { status: 200 });
 
           // Act
           const resultNoMatch = await asserts.assertRejects(() =>
@@ -410,7 +410,7 @@ blocks.describe("deno-mock-fetch", () => {
             .intercept(test.input, {
               method: "GET",
             })
-            .reply("hello", { status: 200 });
+            .response("hello", { status: 200 });
 
           // Act
           const resultNoMatch = await asserts.assertRejects(() =>
@@ -540,7 +540,7 @@ blocks.describe("deno-mock-fetch", () => {
                 method: "POST",
                 body: test.input,
               })
-              .reply("hello", { status: 200 });
+              .response("hello", { status: 200 });
 
             // Act
             const resultNoMatch = await asserts.assertRejects(() =>
@@ -601,7 +601,7 @@ blocks.describe("deno-mock-fetch", () => {
         // Arrange
         const mockScope = mockFetch
           .intercept("https://example.com/hello", { method: "GET" })
-          .reply("hello", { status: 200 }).persist();
+          .response("hello", { status: 200 }).persist();
 
         // Act
         const response1 = await fetch("https://example.com/hello", {
@@ -650,7 +650,7 @@ blocks.describe("deno-mock-fetch", () => {
           // Arrange
           const mockScope = mockFetch
             .intercept("https://example.com/hello", { method: "GET" })
-            .reply("hello", { status: 200 }).times(2);
+            .response("hello", { status: 200 }).times(2);
 
           // Act
           const response1 = await fetch("https://example.com/hello", {
@@ -725,7 +725,7 @@ blocks.describe("deno-mock-fetch", () => {
         try {
           const mockScope = mockFetch
             .intercept("https://example.com/hello", { method: "GET" })
-            .reply("hello", { status: 200 }).delay(1000);
+            .response("hello", { status: 200 }).delay(1000);
 
           // Act
           const promise = fetch("https://example.com/hello", {
@@ -795,9 +795,12 @@ blocks.describe("deno-mock-fetch", () => {
           .intercept("https://example.com/hello")
           .defaultResponseHeaders({ hello: "there" });
 
-        interceptor.reply("hello1", { status: 200 });
-        interceptor.reply("hello2", { status: 200, headers: { foo: "bar" } });
-        interceptor.reply("hello3", { status: 200, headers: { hi: "ho" } });
+        interceptor.response("hello1", { status: 200 });
+        interceptor.response("hello2", {
+          status: 200,
+          headers: { foo: "bar" },
+        });
+        interceptor.response("hello3", { status: 200, headers: { hi: "ho" } });
 
         // Act
         const response1 = await fetch("https://example.com/hello");
@@ -847,7 +850,7 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.activateNetConnect();
         const mockScope = mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const resultNoMatch = await asserts.assertRejects(() =>
@@ -882,7 +885,7 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.activateNetConnect("example.com");
         const mockScope = mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const resultNoMatch = await asserts.assertRejects(() =>
@@ -928,12 +931,12 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.activateNetConnect("another-example.com");
         mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
         mockFetch
           .intercept(new URL("https://another-example.com/hello"), {
             method: "GET",
           })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const resultNoMatch1 = await asserts.assertRejects(() =>
@@ -981,7 +984,7 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.deactivateNetConnect();
         const mockScope = mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const response = await fetch(new URL("https://example.com/hello"), {

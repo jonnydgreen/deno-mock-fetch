@@ -38,15 +38,15 @@ export class MockInterceptor {
   }
 
   /**
-   * Mock a request with a defined reply.
+   * Mock a request with a defined response.
    */
-  reply(
+  response(
     /**
-     * Reply body
+     * Response body
      */
     body?: BodyInit | null,
     /**
-     * Reply response init definition.
+     * Response response init definition.
      */
     init?: ResponseInit,
   ): MockScope {
@@ -82,7 +82,7 @@ export class MockInterceptor {
    * Mock a request with a defined error that will be thrown
    * when global `fetch` is called.
    */
-  replyWithError(
+  throwError(
     /** Error to be thrown. */
     error: Error,
   ): MockScope {
@@ -108,7 +108,7 @@ export class MockInterceptor {
   }
 
   /**
-   * Set default response headers on the interceptor for subsequent replies
+   * Set default response headers on the interceptor for subsequent responses
    */
   defaultResponseHeaders(headersInit: HeadersInit): MockInterceptor {
     this.#defaultHeadersInit = headersInit;
@@ -121,16 +121,9 @@ export class MockInterceptor {
 
   // TODO
   // /**
-  //  * Set default response trailers on the interceptor for subsequent replies
+  //  * Set response content length header for replies on the interceptor
   //  */
-  // defaultResponseTrailers (trailers) {
-  // }
-
-  // TODO
-  // /**
-  //  * Set reply content length header for replies on the interceptor
-  //  */
-  // replyContentLength () {
+  // responseContentLength () {
   // }
 
   /**

@@ -40,8 +40,8 @@ export class MockFetch {
    * mockFetch
    *   // Intercept `GET https://example.com/hello`
    *   .intercept("https://example.com/hello", { method: "GET" })
-   *   // Reply with status `200` and text `hello`
-   *   .reply("hello", { status: 200 });
+   *   // Response with status `200` and text `hello`
+   *   .response("hello", { status: 200 });
    * ```
    */
   public intercept(

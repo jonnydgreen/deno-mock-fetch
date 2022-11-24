@@ -49,8 +49,8 @@ const mockFetch = new MockFetch();
 mockFetch
   // Intercept `GET https://example.com/hello`
   .intercept("https://example.com/hello", { method: "GET" })
-  // Reply with status `200` and text `hello`
-  .reply("hello", { status: 200 });
+  // Respond with status `200` and text `hello`
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -111,7 +111,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello?foo=bar", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -136,7 +136,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 })
+  .response("hello", { status: 200 })
   .persist();
 ```
 
@@ -173,7 +173,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 })
+  .response("hello", { status: 200 })
   // Will intercept matching requests twice
   .times(2);
 ```
@@ -218,7 +218,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 })
+  .response("hello", { status: 200 })
   // Delay 1000ms before returning the response
   .delay(1000);
 ```
@@ -251,7 +251,7 @@ mockFetch.activateNetConnect();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -395,7 +395,7 @@ console.log(mockFetch.calls); // 0
 
 mockFetch
   .intercept("https://example.com/hello?foo=bar", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 
 const response = await fetch("https://example.com/hello");
 
@@ -421,7 +421,7 @@ console.log(mockFetch.calls); // 0
 
 const mockScope = mockFetch
   .intercept("https://example.com/hello?foo=bar", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 
 console.log(mockScope.metadata); // MockRequest
 ```
@@ -437,7 +437,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: /GET/ })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -464,7 +464,7 @@ mockFetch
   .intercept("https://example.com/hello", {
     method: (input) => input === "GET",
   })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -489,7 +489,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept(new RegExp("https\\:\\/\\/example\\.com\\/hello\\?foo\\=bar"))
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -514,7 +514,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept((input) => input === "https://example.com/hello?foo=bar")
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -542,7 +542,7 @@ mockFetch
     method: "POST",
     body: "hello",
   })
-  .reply("there", { status: 200 });
+  .response("there", { status: 200 });
 ```
 
 Call the matching URL:
@@ -582,7 +582,7 @@ const mockFetch = new MockFetch();
 
 mockFetch
   .intercept((input) => input === "https://example.com/hello")
-  .replyWithError(new TypeError("Network error"));
+  .throwError(new TypeError("Network error"));
 ```
 
 Call the matching URL:
@@ -603,7 +603,7 @@ const mockFetch = new MockFetch();
 const mockInterceptor = mockFetch
   .intercept("https://example.com/hello")
   .defaultResponseHeaders({ foo: "bar" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -659,9 +659,7 @@ To browse API documentation:
 - Intercept multiple types of requests at once, based on:
   - Request Headers
 - Set default headers
-- Set default trailers
 - Auto-generated headers
-- Auto-generated trailers
 - Support URI fragments
 
 ## Contributing
@@ -689,6 +687,15 @@ mockFetch.intercept("https://example.com/hello", {
 });
 // Throws an `InvalidArgumentError`
 ```
+
+### No support for trailers
+
+Trailers are currently not supported for the following reasons:
+
+- Not returned in
+  [Deno fetch responses](https://github.com/denoland/deno/issues/16200)
+- Limited
+  [support and documentation](https://developer.mozilla.org/en-US/docs/Web/API/Response)
 
 ## License
 
