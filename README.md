@@ -2,8 +2,9 @@
 
 [![codecov](https://codecov.io/gh/jonnydgreen/deno-mock-fetch/branch/main/graph/badge.svg)](https://codecov.io/gh/jonnydgreen/deno-mock-fetch)
 
-Deno mock fetch implementation to be used in testing. This module allows one to
-intercept calls to the global `fetch` API and control the behaviour accordingly.
+[Deno mock fetch](https://deno.land/x/deno_mock_fetch) implementation to be used
+in testing. This module allows one to intercept calls to the global `fetch` API
+and control the behaviour accordingly.
 
 ## Features
 
@@ -12,6 +13,8 @@ intercept calls to the global `fetch` API and control the behaviour accordingly.
   - Request Origin
   - Request Path
   - Request Query string
+  - Request Body
+  - Request Headers
 - Intercept request indefinitely
 - Intercept request a finite number of times
 - Simulate a request time delay
@@ -21,13 +24,18 @@ intercept calls to the global `fetch` API and control the behaviour accordingly.
   - `string`
   - `RegExp`
   - `Function`
+- Throw custom error support
+- Set default headers
+- Auto-generated headers:
+  - `content-length`
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [API Documentation](#api-documentation)
 - [Examples](#examples)
-- [Upcoming features](#upcoming-features)
 - [Contributing](#contributing)
+- [Limitations](#limitations)
 - [License](#license)
 - [Inspirations](#inspirations)
 
@@ -36,15 +44,15 @@ intercept calls to the global `fetch` API and control the behaviour accordingly.
 Set up a basic `fetch` interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   // Intercept `GET https://example.com/hello`
   .intercept("https://example.com/hello", { method: "GET" })
-  // Reply with status `200` and text `hello`
-  .reply("hello", { status: 200 });
+  // Respond with status `200` and text `hello`
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -89,6 +97,14 @@ I want to:
 - [Intercept a request based on method Function](#intercept-a-request-based-on-method-function)
 - [Intercept a request based on URL RegExp](#intercept-a-request-based-on-url-regexp)
 - [Intercept a request based on URL Function](#intercept-a-request-based-on-url-function)
+- [Intercept a request based on body](#intercept-a-request-based-on-body)
+- [Intercept a request based on headers object](#intercept-a-request-based-on-headers-object)
+- [Intercept a request based on headers instance](#intercept-a-request-based-on-headers-instance)
+- [Intercept a request based on headers array](#intercept-a-request-based-on-headers-array)
+- [Intercept a request based on headers function](#intercept-a-request-based-on-headers-function)
+- [Throw a custom error upon fetch call](#throw-a-custom-error-upon-fetch-call)
+- [Set default headers](#set-default-headers)
+- [Autogenerate `content-length` header](#autogenerate-content-length-header)
 - [Intercept requests alongside superdeno](#intercept-requests-alongside-superdeno)
 
 ### Intercept a request containing a Query String
@@ -96,13 +112,13 @@ I want to:
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello?foo=bar", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -121,13 +137,13 @@ console.log(text); // "hello"
 Set up the interceptor, using the `persist` method on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 })
+  .response("hello", { status: 200 })
   .persist();
 ```
 
@@ -158,13 +174,13 @@ console.log(text); // "hello"
 Set up the interceptor, using the `times` method on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 })
+  .response("hello", { status: 200 })
   // Will intercept matching requests twice
   .times(2);
 ```
@@ -203,13 +219,13 @@ await fetch("https://example.com/hello");
 Set up the interceptor, using the `delay` method on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 })
+  .response("hello", { status: 200 })
   // Delay 1000ms before returning the response
   .delay(1000);
 ```
@@ -234,7 +250,7 @@ not matched. This can be done with the `activateNetConnect` method on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -242,7 +258,7 @@ mockFetch.activateNetConnect();
 
 mockFetch
   .intercept("https://example.com/hello", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -274,7 +290,7 @@ hostnames if a mock is not matched. This can be done by passing matchers to the
 `activateNetConnect` method on the `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -309,7 +325,7 @@ Deactivate calling original URLs by calling the `deactivateNetConnect` on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -326,7 +342,7 @@ Activate fetch interceptions by calling the `activate` method on the `MockFetch`
 instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -339,7 +355,7 @@ Deactivate fetch interceptions by calling the `deactivate` method on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -352,7 +368,7 @@ Check if fetch interceptions are active by checking the value of the
 `isMockActive` field on the `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -365,7 +381,7 @@ Close and clean up the Mock Fetch instance by calling the `close` method on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -378,7 +394,7 @@ Get the number of times requests have been intercepted by checking the value of
 the `calls` field on the `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -386,7 +402,7 @@ console.log(mockFetch.calls); // 0
 
 mockFetch
   .intercept("https://example.com/hello?foo=bar", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 
 const response = await fetch("https://example.com/hello");
 
@@ -404,7 +420,7 @@ View registered mock scope metadata by checking the value of the `metadata`
 field on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -412,7 +428,7 @@ console.log(mockFetch.calls); // 0
 
 const mockScope = mockFetch
   .intercept("https://example.com/hello?foo=bar", { method: "GET" })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 
 console.log(mockScope.metadata); // MockRequest
 ```
@@ -422,13 +438,13 @@ console.log(mockScope.metadata); // MockRequest
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   .intercept("https://example.com/hello", { method: /GET/ })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -447,7 +463,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -455,7 +471,7 @@ mockFetch
   .intercept("https://example.com/hello", {
     method: (input) => input === "GET",
   })
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -474,13 +490,13 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   .intercept(new RegExp("https\\:\\/\\/example\\.com\\/hello\\?foo\\=bar"))
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -499,13 +515,13 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
 mockFetch
   .intercept((input) => input === "https://example.com/hello?foo=bar")
-  .reply("hello", { status: 200 });
+  .response("hello", { status: 200 });
 ```
 
 Call the matching URL:
@@ -519,13 +535,266 @@ console.log(response.status); // 200
 console.log(text); // "hello"
 ```
 
+### Intercept a request based on body
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    method: "POST",
+    body: "hello",
+  })
+  .response("there", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  method: "POST",
+  body: "hello",
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "there"
+```
+
+Note, the following body types are also supported:
+
+- `string`
+- `RegExp`
+- `(input: string) => boolean`
+- `Blob`
+- `ArrayBufferLike`
+- `FormData`
+- `URLSearchParams`
+
+### Intercept a request based on headers object
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: {
+      hello: "there",
+      foo: /bar/,
+      hey: (input: string) => input === "ho",
+    },
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+    foo: "bar",
+    hey: "ho",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on headers instance
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: new Headers({
+      hello: "there",
+      another: "one",
+    }),
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+    another: "one",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on headers array
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: [
+      ["hello", "there"],
+      ["foo", /bar/],
+      ["hey", (input: string) => input === "ho"],
+    ],
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+    foo: "bar",
+    hey: "ho",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Intercept a request based on headers function
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept("https://example.com/hello", {
+    headers: (headers) => headers.get("hello") === "there",
+  })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello", {
+  headers: new Headers({
+    hello: "there",
+  }),
+});
+
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(text); // "hello"
+```
+
+### Throw a custom error upon fetch call
+
+Set up the interceptor and defined an error using the following
+[documentation](https://developer.mozilla.org/en-US/docs/Web/API/fetch#exceptions)
+as a guide.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+mockFetch
+  .intercept((input) => input === "https://example.com/hello")
+  .throwError(new TypeError("Network error"));
+```
+
+Call the matching URL:
+
+```typescript
+await fetch("https://example.com/hello"); // Throws the defined error: new TypeError("Network error")
+```
+
+### Set default headers
+
+Set up the interceptor.
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+const mockInterceptor = mockFetch
+  .intercept("https://example.com/hello")
+  .defaultResponseHeaders({ foo: "bar" })
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello");
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(response.headers); // { "content-type", "text/plain;charset=UTF-8", foo: "bar" }
+console.log(text); // "hello"
+```
+
+### Autogenerate `content-length` header
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+
+const mockInterceptor = mockFetch
+  .intercept("https://example.com/hello")
+  .responseContentLength()
+  .response("hello", { status: 200 });
+```
+
+Call the matching URL:
+
+```typescript
+const response = await fetch("https://example.com/hello");
+const text = await response.text();
+
+console.log(response.status); // 200
+console.log(response.headers); // { "content-type", "text/plain;charset=UTF-8", "content-length": "5" }
+console.log(text); // "hello"
+```
+
 ### Intercept requests alongside superdeno
 
 To work alongside superdeno, one must setup calls to `127.0.0.1` before
 continuing.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.2.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
 import { superdeno } from "https://deno.land/x/superdeno/mod.ts";
 import { opine } from "https://deno.land/x/opine@1.9.1/mod.ts";
 
@@ -549,17 +818,12 @@ superdeno(app)
   });
 ```
 
-## Upcoming features
+## API Documentation
 
-- Intercept multiple types of requests at once, based on:
-  - Request Body
-  - Request Headers
-- Add throw error support
-- Set default headers
-- Set default trailers
-- Auto-generated headers
-- Auto-generated trailers
-- Support URI fragments
+To browse API documentation:
+
+- Go to https://deno.land/x/deno_mock_fetch.
+- Click "View Documentation".
 
 ## Contributing
 
@@ -567,6 +831,34 @@ Contributions, issues and feature requests are very welcome. If you are using
 this package and fixed a bug for yourself, please consider submitting a PR!
 
 Further details can be found in the [Contributing guide](./CONTRIBUTING.md).
+
+## Limitations
+
+The following limitations are known:
+
+### Cannot intercept with a ReadableStream as the request body
+
+The following with throw an `InvalidArgumentError`:
+
+```typescript
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+
+const mockFetch = new MockFetch();
+mockFetch.intercept("https://example.com/hello", {
+  method: "POST",
+  body: new ReadableStream(),
+});
+// Throws an `InvalidArgumentError`
+```
+
+### No support for trailers
+
+Trailers are currently not supported for the following reasons:
+
+- Not returned in
+  [Deno fetch responses](https://github.com/denoland/deno/issues/16200)
+- Limited
+  [support and documentation](https://developer.mozilla.org/en-US/docs/Web/API/Response)
 
 ## License
 

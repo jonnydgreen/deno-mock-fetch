@@ -11,6 +11,11 @@ import { buildKey } from "./mock-utils.ts";
 
 const originalFetch = globalThis.fetch.bind(globalThis);
 
+/**
+ * Deno Mock Fetch class.
+ *
+ * Instantiate this to set up global `fetch` API interception.
+ */
 export class MockFetch {
   readonly #originalFetch: Fetch;
   #mockRequests: MockRequest[] = [];
@@ -27,20 +32,26 @@ export class MockFetch {
 
   /**
    * Intercept a global `fetch` API call for the defined inputs.
-   * @param input The request input of the `fetch` API call.
-   * @param init The request init input of the `fetch` API call.
-   * @returns {MockInterceptor} A Mock Interceptor that allows further customisation of the Request mocking.
    *
-   * @example
+   * ```typescript
+   * import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+   *
    * const mockFetch = new MockFetch();
    * mockFetch
    *   // Intercept `GET https://example.com/hello`
    *   .intercept("https://example.com/hello", { method: "GET" })
-   *   // Reply with status `200` and text `hello`
-   *   .reply("hello", { status: 200 });
+   *   // Response with status `200` and text `hello`
+   *   .response("hello", { status: 200 });
+   * ```
    */
   public intercept(
+    /**
+     * The request input of the `fetch` API call.
+     */
     input: URL | Request | MockMatcher,
+    /**
+     * The request init input of the `fetch` API call.
+     */
     init?: MockRequestInit,
   ): MockInterceptor {
     const interceptor = new MockInterceptor(this.#mockRequests, input, init);
@@ -87,10 +98,11 @@ export class MockFetch {
 
   /**
    * Activate Net Connect support.
-   *
-   * @param {MockMatcher} matcher The Net Connect Hostname Matcher.
    */
   activateNetConnect(
+    /**
+     * The Net Connect Hostname Matcher.
+     */
     matcher?: MockMatcher,
   ) {
     if (matcher) {
@@ -119,8 +131,11 @@ export class MockFetch {
       return this.#originalFetch(input, init);
     }
 
+    // Run any required initialisations
+    await this.#init();
+
     // Get Mock Request
-    const requestKey = buildKey(input, init);
+    const requestKey = await buildKey(input, init);
     try {
       const mockRequest = getMockRequest(this.#mockRequests, requestKey);
       return await this.#mockFetch(mockRequest);
@@ -140,7 +155,6 @@ export class MockFetch {
             `${error.message}: subsequent request to hostname ${hostname} was not allowed (Net Connect is not activated for this hostname)`,
           );
         }
-        // TODO: ensure coverage when error support is added
       } else {
         throw error;
       }
@@ -157,21 +171,23 @@ export class MockFetch {
   }
 
   /**
-   * Mock dispatch function used to simulate fetch calls.
+   * Mock fetch function used to simulate fetch calls.
    */
-  async #mockFetch(mockRequest: MockRequest) {
-    // TODO: error
-    // // If specified, trigger error
-    // if (error !== null) {
-    // }
-
-    // Delay
+  async #mockFetch(mockRequest: MockRequest): Promise<Response> {
+    // If specified, simulate a delay
     if (mockRequest.delay > 0) {
       await new Promise((resolve) => setTimeout(resolve, mockRequest.delay));
     }
 
-    // Update mock request metadata and return response
+    // Update mock request metadata
     const updatedMockRequest = this.#updateMockRequest(mockRequest);
+
+    // If specified, throw the defined error
+    if (mockRequest.error) {
+      throw mockRequest.error;
+    }
+
+    // Otherwise, return response
     return Promise.resolve(updatedMockRequest.response);
   }
 
@@ -185,5 +201,47 @@ export class MockFetch {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Initialise the mock requests for interception.
+   * This happens before every fetch call.
+   */
+  async #init(): Promise<void> {
+    await Promise.all(this.#mockRequests.map(async (mockRequest) => {
+      if (!mockRequest.request.body) {
+        await this.#setupMockRequestBody(mockRequest);
+      }
+    }));
+  }
+
+  /**
+   * Setup the mock request body for subsequent interception. It sets up the following:
+   *  - If input is a Request and the body is not consumed, render the body text
+   *  - If init.body is a Blob, render the Blob text
+   *  - If init.body is an ArrayBufferView, render the decoded view
+   *  - If init.body is a FormData instance, render the FormData as text
+   *  - If init.body is a URLSearchParams instance, render the params as a string
+   */
+  async #setupMockRequestBody(mockRequest: MockRequest): Promise<void> {
+    if (
+      mockRequest.request.input instanceof Request &&
+      !mockRequest.request.input.bodyUsed
+    ) {
+      mockRequest.request.body = await mockRequest.request.input.text();
+    } else if (mockRequest.request.init?.body) {
+      const body = mockRequest.request.init?.body;
+      if (body instanceof Blob) {
+        mockRequest.request.body = await body.text();
+      } else if ((body as ArrayBufferView).buffer instanceof ArrayBuffer) {
+        mockRequest.request.body = new TextDecoder().decode(
+          body as ArrayBufferView,
+        );
+      } else if (body instanceof FormData) {
+        mockRequest.request.body = JSON.stringify([...body.entries()]);
+      } else if (body instanceof URLSearchParams) {
+        mockRequest.request.body = body.toString();
+      }
+    }
   }
 }

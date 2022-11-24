@@ -2,7 +2,11 @@ import * as blocks from "https://deno.land/std@0.163.0/testing/bdd.ts";
 import * as asserts from "https://deno.land/std@0.163.0/testing/asserts.ts";
 import { FakeTime } from "https://deno.land/std@0.163.0/testing/time.ts";
 import { MockFetch } from "./mod.ts";
-import { MockNotMatchedError } from "./mock-fetch.error.ts";
+import {
+  InvalidArgumentError,
+  MockNotMatchedError,
+} from "./mock-fetch.error.ts";
+import { MockHeadersInit } from "./mock-fetch.type.ts";
 
 blocks.describe("deno-mock-fetch", () => {
   let mockFetch: MockFetch;
@@ -20,7 +24,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 }).persist();
+        .response("hello", { status: 200 }).persist();
 
       // Act and Assert
       asserts.assertEquals(mockFetch.calls, 0);
@@ -37,7 +41,7 @@ blocks.describe("deno-mock-fetch", () => {
       mockFetch.deactivate();
       mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 }).persist();
+        .response("hello", { status: 200 }).persist();
       mockFetch.activate();
 
       // Act
@@ -59,7 +63,7 @@ blocks.describe("deno-mock-fetch", () => {
       mockFetch.activate();
       mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 }).persist();
+        .response("hello", { status: 200 }).persist();
       mockFetch.deactivate();
 
       // Act
@@ -84,7 +88,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch("https://example.com/hello", {
@@ -126,7 +130,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept(new URL("https://example.com/hello"), { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch(new URL("https://example.com/hello"), {
@@ -163,14 +167,14 @@ blocks.describe("deno-mock-fetch", () => {
       );
     });
 
-    blocks.it("should support a Request interceptor", async () => {
+    blocks.it("should support a Request-based interceptor", async () => {
       // Arrange
       const request = new Request("https://example.com/hello", {
         method: "GET",
       });
       const mockScope = mockFetch
         .intercept(request)
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch("https://example.com/hello", {
@@ -211,7 +215,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch(new Request("https://example.com/hello"));
@@ -250,7 +254,7 @@ blocks.describe("deno-mock-fetch", () => {
       // Arrange
       const mockScope = mockFetch
         .intercept("https://example.com/hello", { method: "GET" })
-        .reply("hello", { status: 200 });
+        .response("hello", { status: 200 });
 
       // Act
       const response = await fetch("https://example.com/hello");
@@ -285,6 +289,32 @@ blocks.describe("deno-mock-fetch", () => {
       );
     });
 
+    blocks.it("should support throwing an error", async () => {
+      // Arrange
+      const mockScope = mockFetch
+        .intercept("https://example.com/hello")
+        .throwError(new TypeError("Network error"));
+
+      // Act
+      const error = await asserts.assertRejects(() =>
+        fetch("https://example.com/hello")
+      );
+
+      // Assert
+      asserts.assertEquals(mockFetch.isMockActive, true);
+      asserts.assertIsError(error, TypeError, "Network error");
+      asserts.assertEquals(
+        mockScope.metadata.calls,
+        1,
+        "Mock should be called once",
+      );
+      asserts.assertEquals(
+        mockScope.metadata.consumed,
+        true,
+        "Mock should be consumed",
+      );
+    });
+
     blocks.describe("when matching by method", () => {
       [
         {
@@ -306,7 +336,7 @@ blocks.describe("deno-mock-fetch", () => {
             .intercept(new URL("https://example.com/hello"), {
               method: test.input,
             })
-            .reply("hello", { status: 200 });
+            .response("hello", { status: 200 });
 
           // Act
           const resultNoMatch = await asserts.assertRejects(() =>
@@ -381,7 +411,7 @@ blocks.describe("deno-mock-fetch", () => {
             .intercept(test.input, {
               method: "GET",
             })
-            .reply("hello", { status: 200 });
+            .response("hello", { status: 200 });
 
           // Act
           const resultNoMatch = await asserts.assertRejects(() =>
@@ -437,12 +467,247 @@ blocks.describe("deno-mock-fetch", () => {
       });
     });
 
+    blocks.describe("when matching by body", () => {
+      const formData1 = new FormData();
+      formData1.set("hello", "there");
+      const formData2 = new FormData();
+      formData2.set("hello", "there");
+      [
+        {
+          name: "should support matching by body string type",
+          input: "hello",
+          body: "hello",
+        },
+        {
+          name: "should support matching by body RegExp type",
+          input: /hello/,
+          body: "hello",
+        },
+        {
+          name: "should support matching by body function type",
+          input: (input: string) => input === "hello",
+          body: "hello",
+        },
+        {
+          name: "should support matching by body Blob type",
+          input: new Blob(["hello"]),
+          body: "hello",
+        },
+        {
+          name: "should support matching by body ArrayBufferLike type",
+          input: new TextEncoder().encode("hello"),
+          body: "hello",
+        },
+        {
+          name: "should support matching by body FormData type",
+          input: formData1,
+          body: formData2,
+        },
+        {
+          name: "should support matching by body URLSearchParams type",
+          input: new URLSearchParams([["hello", "there"]]),
+          body: "hello=there",
+        },
+        {
+          name: "should error when matching by body ReadableStream",
+          input: new ReadableStream(),
+          body: "",
+          error: {
+            prototype: InvalidArgumentError,
+            msg:
+              "Matching a request body with a ReadableStream is not supported at this time",
+          },
+        },
+      ].forEach((test) => {
+        if (test.error) {
+          blocks.it(test.name, () => {
+            // Arrange and Act
+            const error = asserts.assertThrows(() =>
+              mockFetch
+                .intercept(new URL("https://example.com/hello"), {
+                  method: "POST",
+                  body: test.input,
+                })
+            );
+
+            // Assert
+            asserts.assertIsError(error, test.error.prototype, test.error.msg);
+          });
+        } else {
+          blocks.it(test.name, async () => {
+            // Arrange
+            const mockScope = mockFetch
+              .intercept(new URL("https://example.com/hello"), {
+                method: "POST",
+                body: test.input,
+              })
+              .response("hello", { status: 200 });
+
+            // Act
+            const resultNoMatch = await asserts.assertRejects(() =>
+              fetch(new URL("https://example.com/hello"), {
+                method: "POST",
+                body: "no-match",
+              })
+            );
+
+            // Assert
+            asserts.assertIsError(
+              resultNoMatch,
+              MockNotMatchedError,
+              "Mock Request not matched for body 'no-match'",
+            );
+
+            // Act
+            const response = await fetch(new URL("https://example.com/hello"), {
+              method: "POST",
+              body: test.body,
+            });
+            const text = await response.text();
+
+            // Assert
+            asserts.assertEquals(response.status, 200);
+            asserts.assertEquals(text, "hello");
+            asserts.assertEquals(
+              mockScope.metadata.calls,
+              1,
+              "Mock should be called once",
+            );
+            asserts.assertEquals(
+              mockScope.metadata.consumed,
+              true,
+              "Mock should be consumed",
+            );
+
+            // Act
+            const result = await asserts.assertRejects(() =>
+              fetch(new URL("https://example.com/hello"), {
+                method: "POST",
+                body: test.body,
+              })
+            );
+
+            // Assert
+            asserts.assertIsError(
+              result,
+              MockNotMatchedError,
+              "Mock Request not matched for URL 'https://example.com/hello'",
+            );
+          });
+        }
+      });
+    });
+
+    blocks.describe("when matching by headers", () => {
+      [
+        {
+          name: "should support matching by headers object",
+          input: {
+            hello: "there",
+            foo: /bar/,
+            hey: (input: string) => input === "ho",
+          },
+          headers: new Headers({
+            hello: "there",
+            foo: "bar",
+            hey: "ho",
+          }),
+        },
+        {
+          name: "should support matching by headers instance",
+          input: new Headers({
+            hello: "there",
+            another: "one",
+          }),
+          headers: new Headers({
+            hello: "there",
+            another: "one",
+          }),
+        },
+        {
+          name: "should support matching by headers array",
+          input: [
+            ["hello", "there"],
+            ["foo", /bar/],
+            ["hey", (input: string) => input === "ho"],
+          ] as MockHeadersInit,
+          headers: new Headers({
+            hello: "there",
+            foo: "bar",
+            hey: "ho",
+          }),
+        },
+        {
+          name: "should support matching by headers function",
+          input: (headers: Headers) => headers.get("hello") === "there",
+          headers: new Headers({
+            hello: "there",
+          }),
+        },
+      ].forEach((test) => {
+        blocks.it(test.name, async () => {
+          // Arrange
+          const mockScope = mockFetch
+            .intercept("https://example.com/hello", { headers: test.input })
+            .response("hello", { status: 200 });
+
+          // Act
+          const resultNoMatch = await asserts.assertRejects(() =>
+            fetch("https://example.com/hello", {
+              headers: new Headers({ no: "match" }),
+            })
+          );
+
+          // Assert
+          asserts.assertIsError(
+            resultNoMatch,
+            MockNotMatchedError,
+            'Mock Request not matched for headers \'[["no","match"]]\'',
+          );
+
+          // Act
+          const response = await fetch(new URL("https://example.com/hello"), {
+            headers: test.headers,
+          });
+          const text = await response.text();
+
+          // Assert
+          asserts.assertEquals(response.status, 200);
+          asserts.assertEquals(text, "hello");
+          asserts.assertEquals(
+            mockScope.metadata.calls,
+            1,
+            "Mock should be called once",
+          );
+          asserts.assertEquals(
+            mockScope.metadata.consumed,
+            true,
+            "Mock should be consumed",
+          );
+
+          // Act
+          const result = await asserts.assertRejects(() =>
+            fetch(new URL("https://example.com/hello"), {
+              headers: test.headers,
+            })
+          );
+
+          // Assert
+          asserts.assertIsError(
+            result,
+            MockNotMatchedError,
+            "Mock Request not matched for URL 'https://example.com/hello'",
+          );
+        });
+      });
+    });
+
     blocks.describe("when customising mock scope", () => {
       blocks.it("should support persisting requests", async () => {
         // Arrange
         const mockScope = mockFetch
           .intercept("https://example.com/hello", { method: "GET" })
-          .reply("hello", { status: 200 }).persist();
+          .response("hello", { status: 200 }).persist();
 
         // Act
         const response1 = await fetch("https://example.com/hello", {
@@ -491,7 +756,7 @@ blocks.describe("deno-mock-fetch", () => {
           // Arrange
           const mockScope = mockFetch
             .intercept("https://example.com/hello", { method: "GET" })
-            .reply("hello", { status: 200 }).times(2);
+            .response("hello", { status: 200 }).times(2);
 
           // Act
           const response1 = await fetch("https://example.com/hello", {
@@ -566,7 +831,7 @@ blocks.describe("deno-mock-fetch", () => {
         try {
           const mockScope = mockFetch
             .intercept("https://example.com/hello", { method: "GET" })
-            .reply("hello", { status: 200 }).delay(1000);
+            .response("hello", { status: 200 }).delay(1000);
 
           // Act
           const promise = fetch("https://example.com/hello", {
@@ -627,6 +892,124 @@ blocks.describe("deno-mock-fetch", () => {
         }
       });
     });
+
+    blocks.it(
+      "should use default headers when default Response Headers are defined",
+      async () => {
+        // Arrange
+        const interceptor = mockFetch
+          .intercept("https://example.com/hello")
+          .defaultResponseHeaders({ hello: "there" });
+
+        interceptor.response("hello1", { status: 200 });
+        interceptor.response("hello2", {
+          status: 200,
+          headers: { foo: "bar" },
+        });
+        interceptor.response("hello3", { status: 200, headers: { hi: "ho" } });
+
+        // Act
+        const response1 = await fetch("https://example.com/hello");
+        const text1 = await response1.text();
+        const response2 = await fetch("https://example.com/hello");
+        const text2 = await response2.text();
+
+        interceptor.defaultResponseHeaders({ hey: "hey" });
+
+        const response3 = await fetch("https://example.com/hello");
+        const text3 = await response3.text();
+
+        // Assert
+        asserts.assertEquals(response1.status, 200);
+        asserts.assertEquals(text1, "hello1");
+        asserts.assertEquals(
+          [...response1.headers.entries()],
+          [["content-type", "text/plain;charset=UTF-8"], ["hello", "there"]],
+        );
+        asserts.assertEquals(response2.status, 200);
+        asserts.assertEquals(text2, "hello2");
+        asserts.assertEquals(
+          [...response2.headers.entries()],
+          [["content-type", "text/plain;charset=UTF-8"], ["foo", "bar"], [
+            "hello",
+            "there",
+          ]],
+        );
+        asserts.assertEquals(response3.status, 200);
+        asserts.assertEquals(text3, "hello3");
+        asserts.assertEquals(
+          [...response3.headers.entries()],
+          [["content-type", "text/plain;charset=UTF-8"], ["hey", "hey"], [
+            "hi",
+            "ho",
+          ]],
+        );
+      },
+    );
+
+    blocks.it(
+      "should not treat URI fragment as part of the URL-based request matching",
+      async () => {
+        // Arrange
+        const mockScope = mockFetch
+          .intercept("https://example.com/hello#some-fragment")
+          .response("hello", { status: 200 });
+
+        // Act
+        const response = await fetch("https://example.com/hello");
+        const text = await response.text();
+
+        // Assert
+        asserts.assertEquals(response.status, 200);
+        asserts.assertEquals(text, "hello");
+        asserts.assertEquals(
+          mockScope.metadata.calls,
+          1,
+          "Mock should be called once",
+        );
+        asserts.assertEquals(
+          mockScope.metadata.consumed,
+          true,
+          "Mock should be consumed",
+        );
+      },
+    );
+
+    blocks.it(
+      "should automatically calculate content-length headers when activated",
+      async () => {
+        // Arrange
+        const mockInterceptor = mockFetch
+          .intercept("https://example.com/hello");
+
+        mockInterceptor.response("hello1", { status: 200 });
+        mockInterceptor.response("hello2", { status: 200 });
+        mockInterceptor.response("hello-there", { status: 200 });
+
+        // Act
+        const response1 = await fetch("https://example.com/hello");
+        const text1 = await response1.text();
+
+        mockInterceptor.responseContentLength();
+
+        const response2 = await fetch("https://example.com/hello");
+        const text2 = await response2.text();
+
+        const response3 = await fetch("https://example.com/hello");
+        const text3 = await response3.text();
+
+        // Assert
+        asserts.assertEquals(response1.status, 200);
+        asserts.assertEquals(text1, "hello1");
+        asserts.assertEquals(response1.headers.get("content-length"), null);
+        asserts.assertEquals(response2.status, 200);
+        asserts.assertEquals(text2, "hello2");
+        asserts.assertEquals(response2.headers.get("content-length"), "6");
+        asserts.assertEquals(response3.status, 200);
+        asserts.assertEquals(text3, "hello-there");
+        asserts.assertEquals(response3.headers.get("content-length"), "11");
+      },
+    );
   });
 
   blocks.describe("activateNetConnect", () => {
@@ -637,7 +1020,7 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.activateNetConnect();
         const mockScope = mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const resultNoMatch = await asserts.assertRejects(() =>
@@ -672,7 +1055,7 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.activateNetConnect("example.com");
         const mockScope = mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const resultNoMatch = await asserts.assertRejects(() =>
@@ -718,12 +1101,12 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.activateNetConnect("another-example.com");
         mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
         mockFetch
           .intercept(new URL("https://another-example.com/hello"), {
             method: "GET",
           })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const resultNoMatch1 = await asserts.assertRejects(() =>
@@ -771,7 +1154,7 @@ blocks.describe("deno-mock-fetch", () => {
         mockFetch.deactivateNetConnect();
         const mockScope = mockFetch
           .intercept(new URL("https://example.com/hello"), { method: "GET" })
-          .reply("hello", { status: 200 });
+          .response("hello", { status: 200 });
 
         // Act
         const response = await fetch(new URL("https://example.com/hello"), {

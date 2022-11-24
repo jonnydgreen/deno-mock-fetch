@@ -3,22 +3,24 @@ export type Fetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export interface MockRequestInit extends Omit<RequestInit, "method"> {
-  method: MockMatcher;
+export interface MockRequestInit
+  extends Omit<RequestInit, "method" | "body" | "headers"> {
+  method?: MockMatcher;
+  body?: BodyInit | null | MockMatcher;
+  headers?: MockHeadersInit;
 }
+
+export type MockHeadersInit = Headers | Record<string, MockMatcher> | [
+  string,
+  MockMatcher,
+][] | ((headers: Headers) => boolean);
 
 export interface RequestKey {
   url: URL;
   method: string;
-  body?: unknown;
-  headers?: Headers;
+  headers: Headers;
   query?: URLSearchParams;
-}
-
-export interface MockRequestKey {
-  url: URL;
-  method: string;
-  query?: URLSearchParams;
+  body?: string;
 }
 
 export interface MockRequestInputs {
@@ -26,11 +28,13 @@ export interface MockRequestInputs {
   init?: MockRequestInit;
   url: MockMatcher;
   method: MockMatcher;
+  body?: MockMatcher;
 }
 
 export interface MockRequest {
   request: MockRequestInputs;
   response: Response;
+  error?: Error;
   consumed: boolean;
   pending: boolean;
   persist: boolean;
