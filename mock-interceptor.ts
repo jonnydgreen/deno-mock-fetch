@@ -1,3 +1,4 @@
+import { InvalidArgumentError } from "./mock-fetch.error.ts";
 import {
   MockMatcher,
   MockRequest,
@@ -24,6 +25,13 @@ export class MockInterceptor {
     this.#mockRequests = mockRequests;
     this.#input = input;
     this.#init = init;
+
+    if (this.#init?.body instanceof ReadableStream) {
+      // TODO: add limitations section in the README
+      throw new InvalidArgumentError(
+        "Matching a request body with a ReadableStream is not supported at this time",
+      );
+    }
 
     // TODO: support URI fragments
   }

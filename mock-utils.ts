@@ -62,6 +62,9 @@ export async function getResourceBody(
   }
 
   if (init?.body) {
+    if (init.body instanceof FormData) {
+      return JSON.stringify([...init.body.entries()]);
+    }
     return init.body.toString();
   }
 }

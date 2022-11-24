@@ -3,8 +3,9 @@ export type Fetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export interface MockRequestInit extends Omit<RequestInit, "method"> {
+export interface MockRequestInit extends Omit<RequestInit, "method" | "body"> {
   method: MockMatcher;
+  body?: BodyInit | null | MockMatcher;
 }
 
 export interface RequestKey {

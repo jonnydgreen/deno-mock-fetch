@@ -203,15 +203,45 @@ export class MockFetch {
     return false;
   }
 
+  /**
+   * Initialise the mock requests for interception.
+   * This happens before every fetch call.
+   */
   async #init(): Promise<void> {
     await Promise.all(this.#mockRequests.map(async (mockRequest) => {
-      if (
-        !mockRequest.request.body &&
-        mockRequest.request.input instanceof Request &&
-        !mockRequest.request.input.bodyUsed
-      ) {
-        mockRequest.request.body = await mockRequest.request.input.text();
+      if (!mockRequest.request.body) {
+        await this.#setupMockRequestBody(mockRequest);
       }
     }));
+  }
+
+  /**
+   * Setup the mock request body for subsequent interception. It sets up the following:
+   *  - If input is a Request and the body is not consumed, render the body text
+   *  - If init.body is a Blob, render the Blob text
+   *  - If init.body is an ArrayBufferView, render the decoded view
+   *  - If init.body is a FormData instance, render the FormData as text
+   *  - If init.body is a URLSearchParams instance, render the params as a string
+   */
+  async #setupMockRequestBody(mockRequest: MockRequest): Promise<void> {
+    if (
+      mockRequest.request.input instanceof Request &&
+      !mockRequest.request.input.bodyUsed
+    ) {
+      mockRequest.request.body = await mockRequest.request.input.text();
+    } else if (mockRequest.request.init?.body) {
+      const body = mockRequest.request.init?.body;
+      if (body instanceof Blob) {
+        mockRequest.request.body = await body.text();
+      } else if ((body as ArrayBufferView).buffer instanceof ArrayBuffer) {
+        mockRequest.request.body = new TextDecoder().decode(
+          body as ArrayBufferView,
+        );
+      } else if (body instanceof FormData) {
+        mockRequest.request.body = JSON.stringify([...body.entries()]);
+      } else if (body instanceof URLSearchParams) {
+        mockRequest.request.body = body.toString();
+      }
+    }
   }
 }

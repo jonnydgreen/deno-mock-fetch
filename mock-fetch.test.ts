@@ -2,7 +2,10 @@ import * as blocks from "https://deno.land/std@0.163.0/testing/bdd.ts";
 import * as asserts from "https://deno.land/std@0.163.0/testing/asserts.ts";
 import { FakeTime } from "https://deno.land/std@0.163.0/testing/time.ts";
 import { MockFetch } from "./mod.ts";
-import { MockNotMatchedError } from "./mock-fetch.error.ts";
+import {
+  InvalidArgumentError,
+  MockNotMatchedError,
+} from "./mock-fetch.error.ts";
 
 blocks.describe("deno-mock-fetch", () => {
   let mockFetch: MockFetch;
@@ -464,80 +467,132 @@ blocks.describe("deno-mock-fetch", () => {
     });
 
     blocks.describe("when matching by body", () => {
+      const formData1 = new FormData();
+      formData1.set("hello", "there");
+      const formData2 = new FormData();
+      formData2.set("hello", "there");
       [
         {
           name: "should support matching by body string type",
           input: "hello",
+          body: "hello",
         },
-        // TODO: regex
-        // TODO: fn
-        // TODO: body types
-        // | Blob
-        // | BufferSource
-        // | FormData
-        // | URLSearchParams
-        // | ReadableStream<Uint8Array>
-        // | string;
+        {
+          name: "should support matching by body RegExp type",
+          input: /hello/,
+          body: "hello",
+        },
+        {
+          name: "should support matching by body function type",
+          input: (input: string) => input === "hello",
+          body: "hello",
+        },
+        {
+          name: "should support matching by body Blob type",
+          input: new Blob(["hello"]),
+          body: "hello",
+        },
+        {
+          name: "should support matching by body ArrayBufferLike type",
+          input: new TextEncoder().encode("hello"),
+          body: "hello",
+        },
+        {
+          name: "should support matching by body FormData type",
+          input: formData1,
+          body: formData2,
+        },
+        {
+          name: "should support matching by body URLSearchParams type",
+          input: new URLSearchParams([["hello", "there"]]),
+          body: "hello=there",
+        },
+        {
+          name: "should error when matching by body ReadableStream",
+          input: new ReadableStream(),
+          body: "",
+          error: {
+            prototype: InvalidArgumentError,
+            msg:
+              "Matching a request body with a ReadableStream is not supported at this time",
+          },
+        },
       ].forEach((test) => {
-        blocks.it(test.name, async () => {
-          // Arrange
-          const mockScope = mockFetch
-            .intercept(new URL("https://example.com/hello"), {
-              method: "POST",
-              body: test.input,
-            })
-            .reply("hello", { status: 200 });
+        if (test.error) {
+          blocks.it(test.name, () => {
+            // Arrange and Act
+            const error = asserts.assertThrows(() =>
+              mockFetch
+                .intercept(new URL("https://example.com/hello"), {
+                  method: "POST",
+                  body: test.input,
+                })
+            );
 
-          // Act
-          const resultNoMatch = await asserts.assertRejects(() =>
-            fetch(new URL("https://example.com/hello"), {
-              method: "POST",
-              body: "no-match",
-            })
-          );
-
-          // Assert
-          asserts.assertIsError(
-            resultNoMatch,
-            MockNotMatchedError,
-            "Mock Request not matched for body 'no-match'",
-          );
-
-          // Act
-          const response = await fetch(new URL("https://example.com/hello"), {
-            method: "POST",
-            body: test.input,
+            // Assert
+            asserts.assertIsError(error, test.error.prototype, test.error.msg);
           });
-          const text = await response.text();
+        } else {
+          blocks.it(test.name, async () => {
+            // Arrange
+            const mockScope = mockFetch
+              .intercept(new URL("https://example.com/hello"), {
+                method: "POST",
+                body: test.input,
+              })
+              .reply("hello", { status: 200 });
 
-          // Assert
-          asserts.assertEquals(response.status, 200);
-          asserts.assertEquals(text, "hello");
-          asserts.assertEquals(
-            mockScope.metadata.calls,
-            1,
-            "Mock should be called once",
-          );
-          asserts.assertEquals(
-            mockScope.metadata.consumed,
-            true,
-            "Mock should be consumed",
-          );
+            // Act
+            const resultNoMatch = await asserts.assertRejects(() =>
+              fetch(new URL("https://example.com/hello"), {
+                method: "POST",
+                body: "no-match",
+              })
+            );
 
-          // Act
-          const result = await asserts.assertRejects(() =>
-            fetch(new URL("https://example.com/hello"), {
+            // Assert
+            asserts.assertIsError(
+              resultNoMatch,
+              MockNotMatchedError,
+              "Mock Request not matched for body 'no-match'",
+            );
+
+            // Act
+            const response = await fetch(new URL("https://example.com/hello"), {
               method: "POST",
-            })
-          );
+              body: test.body,
+            });
+            const text = await response.text();
 
-          // Assert
-          asserts.assertIsError(
-            result,
-            MockNotMatchedError,
-            "Mock Request not matched for URL 'https://example.com/hello'",
-          );
-        });
+            // Assert
+            asserts.assertEquals(response.status, 200);
+            asserts.assertEquals(text, "hello");
+            asserts.assertEquals(
+              mockScope.metadata.calls,
+              1,
+              "Mock should be called once",
+            );
+            asserts.assertEquals(
+              mockScope.metadata.consumed,
+              true,
+              "Mock should be consumed",
+            );
+
+            // Act
+            const result = await asserts.assertRejects(() =>
+              fetch(new URL("https://example.com/hello"), {
+                method: "POST",
+              })
+            );
+
+            // Assert
+            asserts.assertIsError(
+              result,
+              MockNotMatchedError,
+              "Mock Request not matched for URL 'https://example.com/hello'",
+            );
+          });
+        }
       });
     });
 
