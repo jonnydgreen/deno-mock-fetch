@@ -44,7 +44,7 @@ and control the behaviour accordingly.
 Set up a basic `fetch` interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -112,7 +112,7 @@ I want to:
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -137,7 +137,7 @@ console.log(text); // "hello"
 Set up the interceptor, using the `persist` method on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -174,7 +174,7 @@ console.log(text); // "hello"
 Set up the interceptor, using the `times` method on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -219,7 +219,7 @@ await fetch("https://example.com/hello");
 Set up the interceptor, using the `delay` method on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -250,7 +250,7 @@ not matched. This can be done with the `activateNetConnect` method on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -290,7 +290,7 @@ hostnames if a mock is not matched. This can be done by passing matchers to the
 `activateNetConnect` method on the `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -325,7 +325,7 @@ Deactivate calling original URLs by calling the `deactivateNetConnect` on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -342,7 +342,7 @@ Activate fetch interceptions by calling the `activate` method on the `MockFetch`
 instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -355,7 +355,7 @@ Deactivate fetch interceptions by calling the `deactivate` method on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -368,7 +368,7 @@ Check if fetch interceptions are active by checking the value of the
 `isMockActive` field on the `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -381,7 +381,7 @@ Close and clean up the Mock Fetch instance by calling the `close` method on the
 `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -394,7 +394,7 @@ Get the number of times requests have been intercepted by checking the value of
 the `calls` field on the `MockFetch` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -420,7 +420,7 @@ View registered mock scope metadata by checking the value of the `metadata`
 field on the `MockScope` instance.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -438,7 +438,7 @@ console.log(mockScope.metadata); // MockRequest
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -463,7 +463,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -490,7 +490,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -515,7 +515,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -540,7 +540,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -581,7 +581,7 @@ Note, the following body types are also supported:
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -618,7 +618,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -653,7 +653,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -690,7 +690,7 @@ console.log(text); // "hello"
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -723,7 +723,7 @@ Set up the interceptor and defined an error using the following
 as a guide.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -743,7 +743,7 @@ await fetch("https://example.com/hello"); // Throws the defined error: new TypeE
 Set up the interceptor.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -767,7 +767,7 @@ console.log(text); // "hello"
 ### Autogenerate `content-length` header
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 
@@ -794,7 +794,7 @@ To work alongside superdeno, one must setup calls to `127.0.0.1` before
 continuing.
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 import { superdeno } from "https://deno.land/x/superdeno/mod.ts";
 import { opine } from "https://deno.land/x/opine@1.9.1/mod.ts";
 
@@ -841,7 +841,7 @@ The following limitations are known:
 The following with throw an `InvalidArgumentError`:
 
 ```typescript
-import { MockFetch } from "https://deno.land/x/deno_mock_fetch@0.3.0/mod.ts";
+import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
 
 const mockFetch = new MockFetch();
 mockFetch.intercept("https://example.com/hello", {
