@@ -19,16 +19,26 @@ export function matchValue(
   return match(value) === true;
 }
 
-export function safeURL(path: string) {
-  const pathSegments = path.split("?");
+/**
+ * As per RFC 3986, clients are not supposed to send URI
+ * fragments to servers when they retrieve a document. Therefore,
+ * we strip these out.
+ */
+export function stripURIFragments(rawURL: string): string {
+  const url = new URL(rawURL);
+  return url.href.replace(url.hash, "");
+}
 
-  if (pathSegments.length !== 2) {
-    return path;
+export function safeURL(rawURL: string): string {
+  const urlSegments = rawURL.split("?");
+
+  if (urlSegments.length !== 2) {
+    return stripURIFragments(rawURL);
   }
 
-  const qp = new URLSearchParams(pathSegments.pop());
+  const qp = new URLSearchParams(urlSegments.pop());
   qp.sort();
-  return [...pathSegments, qp.toString()].join("?");
+  return stripURIFragments([...urlSegments, qp.toString()].join("?"));
 }
 
 export function getResourceMethod(

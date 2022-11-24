@@ -28,13 +28,10 @@ export class MockInterceptor {
     this.#init = init;
 
     if (this.#init?.body instanceof ReadableStream) {
-      // TODO: add limitations section in the README
       throw new InvalidArgumentError(
         "Matching a request body with a ReadableStream is not supported at this time",
       );
     }
-
-    // TODO: support URI fragments
   }
 
   /**

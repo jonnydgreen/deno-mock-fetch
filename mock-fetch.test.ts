@@ -840,6 +840,34 @@ blocks.describe("deno-mock-fetch", () => {
         );
       },
     );
+
+    blocks.it(
+      "should not treat URI fragment as part of the URL-based request matching",
+      async () => {
+        // Arrange
+        const mockScope = mockFetch
+          .intercept("https://example.com/hello#some-fragment")
+          .response("hello", { status: 200 });
+
+        // Act
+        const response = await fetch("https://example.com/hello");
+        const text = await response.text();
+
+        // Assert
+        asserts.assertEquals(response.status, 200);
+        asserts.assertEquals(text, "hello");
+        asserts.assertEquals(
+          mockScope.metadata.calls,
+          1,
+          "Mock should be called once",
+        );
+        asserts.assertEquals(
+          mockScope.metadata.consumed,
+          true,
+          "Mock should be consumed",
+        );
+      },
+    );
   });
 
   blocks.describe("activateNetConnect", () => {

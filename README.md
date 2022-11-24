@@ -658,9 +658,7 @@ To browse API documentation:
 
 - Intercept multiple types of requests at once, based on:
   - Request Headers
-- Set default headers
 - Auto-generated headers
-- Support URI fragments
 
 ## Contributing
 
