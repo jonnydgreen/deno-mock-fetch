@@ -34,7 +34,7 @@ export class MockFetch {
    * Intercept a global `fetch` API call for the defined inputs.
    *
    * ```typescript
-   * import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.0/mod.ts";
+   * import { MockFetch } from "https://deno.land/x/deno_mock_fetch@1.0.1/mod.ts";
    *
    * const mockFetch = new MockFetch();
    * mockFetch
