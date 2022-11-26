@@ -1,12 +1,12 @@
 import * as blocks from "https://deno.land/std@0.163.0/testing/bdd.ts";
 import * as asserts from "https://deno.land/std@0.163.0/testing/asserts.ts";
 import { FakeTime } from "https://deno.land/std@0.163.0/testing/time.ts";
-import { MockFetch } from "./mod.ts";
 import {
   InvalidArgumentError,
+  MockFetch,
+  MockHeadersInit,
   MockNotMatchedError,
-} from "./mock-fetch.error.ts";
-import { MockHeadersInit } from "./mock-fetch.type.ts";
+} from "./mod.ts";
 
 blocks.describe("deno-mock-fetch", () => {
   let mockFetch: MockFetch;
