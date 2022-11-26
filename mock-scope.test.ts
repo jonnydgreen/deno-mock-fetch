@@ -1,8 +1,6 @@
 import * as blocks from "https://deno.land/std@0.163.0/testing/bdd.ts";
 import * as asserts from "https://deno.land/std@0.163.0/testing/asserts.ts";
-import { MockScope } from "./mock-scope.ts";
-import { MockRequest } from "./mock-fetch.type.ts";
-import { InvalidArgumentError } from "./mock-fetch.error.ts";
+import { InvalidArgumentError, MockRequest, MockScope } from "./mod.ts";
 
 blocks.describe("MockScope", () => {
   blocks.describe("delay", () => {
