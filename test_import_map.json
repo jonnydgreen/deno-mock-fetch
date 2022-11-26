@@ -1,5 +1,5 @@
 {
   "imports": {
-    "https://deno.land/x/deno_mock_fetch@1.0.0/": "./"
+    "https://deno.land/x/deno_mock_fetch@1.0.1/": "./"
   }
 }
